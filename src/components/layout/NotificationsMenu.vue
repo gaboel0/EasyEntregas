@@ -27,7 +27,7 @@ const TONE = { warning: 'bg-amber-50 text-amber-600', danger: 'bg-rose-50 text-r
         <Bell :size="18" />
         <span
           v-if="notifications.unread.length"
-          class="tabular absolute top-1 right-1 grid h-4 min-w-4 place-items-center rounded-full bg-danger px-1 text-[10px] font-semibold text-white"
+          class="tabular absolute top-1 right-1 grid h-4 min-w-4 place-items-center rounded-full bg-danger px-1 text-xs font-semibold text-white"
         >
           {{ notifications.unread.length > 9 ? '9+' : notifications.unread.length }}
         </span>
@@ -62,13 +62,13 @@ const TONE = { warning: 'bg-amber-50 text-amber-600', danger: 'bg-rose-50 text-r
                 <span v-else class="size-1.5 shrink-0 rounded-full bg-brand-500" aria-label="não lido" />
               </span>
               <span class="block truncate text-xs text-slate-500">{{ n.description }}</span>
-              <span class="block text-[11px] text-slate-400">{{ formatRelative(n.at, now) }}</span>
+              <span class="block text-xs text-slate-400">{{ formatRelative(n.at, now) }}</span>
             </span>
           </RouterLink>
         </li>
       </ul>
       <EmptyState v-else compact title="Nenhum alerta no momento" description="Avisos sobre atrasos, falhas e novos pedidos aparecem aqui." />
-      <p class="border-t border-slate-100 px-4 py-2 text-[11px] text-slate-400">Ajuste quais alertas aparecem em Configurações › Notificações.</p>
+      <p class="border-t border-slate-100 px-4 py-2 text-xs text-slate-400">Ajuste quais alertas aparecem em Configurações › Notificações.</p>
     </template>
   </AppPopover>
 </template>

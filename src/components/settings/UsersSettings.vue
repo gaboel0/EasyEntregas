@@ -68,7 +68,7 @@ async function submit() {
             <td class="text-slate-600">{{ u.email }}</td>
             <td class="text-slate-600">{{ ROLE_LABEL[u.role] }}</td>
             <td>
-              <span class="rounded-full px-2 py-0.5 text-[11px] font-medium ring-1 ring-inset" :class="u.active ? 'bg-emerald-50 text-emerald-700 ring-emerald-200' : 'bg-zinc-100 text-zinc-500 ring-zinc-200'">
+              <span class="rounded-full px-2 py-0.5 text-xs font-medium ring-1 ring-inset" :class="u.active ? 'bg-emerald-50 text-emerald-700 ring-emerald-200' : 'bg-zinc-100 text-zinc-500 ring-zinc-200'">
                 {{ u.active ? 'Ativo' : 'Inativo' }}
               </span>
             </td>

@@ -10,6 +10,8 @@ const db = createDemoDatabase(NOW)
 describe('dados demonstrativos coerentes', () => {
   it('cada pedido tem ao menos uma entrega e histórico que termina no status atual', () => {
     for (const order of db.orders) {
+      // Retirada no balcão não tem entrega logística.
+      if (order.fulfillment === 'pickup') continue
       const deliveries = db.deliveries.filter((d) => d.orderId === order.id)
       expect(deliveries.length).toBeGreaterThan(0)
       const changes = db.orderHistory.filter((h) => h.orderId === order.id && h.kind === 'status_change')
@@ -23,7 +25,7 @@ describe('dados demonstrativos coerentes', () => {
   })
 
   it('pedidos em rota ou entregues sempre têm motoboy; entregues têm custo congelado', () => {
-    for (const order of db.orders.filter((o) => o.status === 'out_for_delivery' || o.status === 'delivered')) {
+    for (const order of db.orders.filter((o) => o.fulfillment !== 'pickup' && (o.status === 'out_for_delivery' || o.status === 'delivered'))) {
       const latest = db.deliveries.filter((d) => d.orderId === order.id).sort((a, b) => b.attempt - a.attempt)[0]!
       expect(latest.courierId).not.toBeNull()
       if (order.status === 'delivered') expect(latest.costSnapshot).not.toBeNull()

@@ -6,6 +6,7 @@ import {
   Calculator,
   ChartColumn,
   QrCode,
+  Activity,
   ClipboardList,
   LayoutDashboard,
   Map,
@@ -25,7 +26,7 @@ const orders = useOrdersStore()
 const session = useSessionStore()
 
 const activeCount = computed(() => orders.views.filter((v) => ACTIVE_STATUSES.includes(v.order.status)).length)
-const toDispatch = computed(() => orders.views.filter((v) => PRE_DISPATCH_STATUSES.includes(v.order.status) && !v.delivery?.courierId))
+const toDispatch = computed(() => orders.views.filter((v) => PRE_DISPATCH_STATUSES.includes(v.order.status) && v.order.fulfillment !== 'pickup' && !v.delivery?.courierId))
 const lateCount = computed(() => orders.views.filter((v) => v.isDispatchLate).length)
 
 const sections = computed(() => [
@@ -41,6 +42,7 @@ const sections = computed(() => [
   {
     label: 'Gestão',
     items: [
+      { name: 'analysis', label: 'Análise', icon: Activity },
       { name: 'couriers', label: 'Motoboys', icon: Bike },
       { name: 'calculator', label: 'Calculadora de frete', icon: Calculator },
       { name: 'app-qrcode', label: 'QRCode para app', icon: QrCode },
@@ -108,7 +110,7 @@ onMounted(() => {
       />
       <div v-for="section in sections" :key="section.label" class="mb-4">
         <div class="relative mb-1.5 h-5 px-2.5">
-          <p class="sb-label text-[11px] leading-5 font-medium tracking-wider whitespace-nowrap text-sidebar-muted/80 uppercase">{{ section.label }}</p>
+          <p class="sb-label text-xs leading-5 font-semibold whitespace-nowrap text-sidebar-muted">{{ section.label }}</p>
           <span class="sb-rule" aria-hidden="true" />
         </div>
         <ul class="space-y-1">
@@ -132,7 +134,7 @@ onMounted(() => {
               <span class="sb-label min-w-0 flex-1 truncate" :title="item.label">{{ item.label }}</span>
               <span
                 v-if="'badge' in item && item.badge"
-                class="sb-label tabular rounded-full px-1.5 py-px text-[11px] font-semibold"
+                class="sb-label tabular rounded-full px-1.5 py-px text-xs font-semibold"
                 :class="'alert' in item && item.alert ? 'bg-[#fbbf24] text-[#451a03]' : 'bg-sidebar-active text-sidebar-fg'"
                 :title="'alert' in item && item.alert ? 'Há pedidos aguardando despacho além do tempo limite' : undefined"
               >

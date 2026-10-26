@@ -10,6 +10,8 @@ const props = withDefaults(
     size?: 'sm' | 'md' | 'lg' | 'xl'
     /** Impede fechar clicando fora (ex.: formulários com dados). */
     persistent?: boolean
+    /** Diálogo que abre por cima de outro modal (ex.: confirmação). */
+    elevated?: boolean
   }>(),
   { size: 'md' },
 )
@@ -67,7 +69,7 @@ const widths = { sm: 'max-w-md', md: 'max-w-lg', lg: 'max-w-2xl', xl: 'max-w-4xl
 
 <template>
   <Teleport to="body">
-    <div v-if="open" class="fixed inset-0 z-50 flex items-end justify-center p-0 sm:items-center sm:p-4" @keydown="onKeydown">
+    <div v-if="open" class="fixed inset-0 flex items-end justify-center p-0 sm:items-center sm:p-4" :class="elevated ? 'z-[70]' : 'z-50'" @keydown="onKeydown">
       <div class="absolute inset-0 animate-fade-in bg-black/40" aria-hidden="true" @click="!persistent && emit('close')" />
       <div
         ref="panel"

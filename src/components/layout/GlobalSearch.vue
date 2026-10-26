@@ -106,7 +106,7 @@ onBeforeUnmount(() => window.removeEventListener('keydown', onGlobalKey))
       @input="active = 0"
       @keydown="onKeydown"
     />
-    <kbd class="pointer-events-none absolute top-1/2 right-2.5 hidden -translate-y-1/2 rounded border border-slate-200 px-1.5 text-[10px] text-slate-400 sm:block">/</kbd>
+    <kbd class="pointer-events-none absolute top-1/2 right-2.5 hidden -translate-y-1/2 rounded border border-slate-200 px-1.5 text-xs text-slate-400 sm:block">/</kbd>
     <ul
       v-if="focused && query.trim().length >= 2"
       id="global-search-results"

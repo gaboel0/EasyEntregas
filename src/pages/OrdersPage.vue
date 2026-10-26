@@ -8,6 +8,7 @@ import AppButton from '@/components/ui/AppButton.vue'
 import SegmentedControl from '@/components/ui/SegmentedControl.vue'
 import EmptyState from '@/components/ui/EmptyState.vue'
 import OrdersTable from '@/components/orders/OrdersTable.vue'
+import OrderStatusModal from '@/components/dashboard/OrderStatusModal.vue'
 import { useOrdersStore } from '@/stores/orders'
 import { useCouriersStore } from '@/stores/couriers'
 import { useSessionStore } from '@/stores/session'
@@ -118,6 +119,7 @@ const statusOptions = computed(() => [
   { value: 'all' as StatusFilter, label: 'Todos', count: base.value.length },
 ])
 
+const selectedId = ref<string | null>(null)
 const PAGE = 50
 const limit = ref(PAGE)
 const visible = computed(() => filtered.value.slice(0, limit.value))
@@ -179,7 +181,7 @@ const totals = computed(() => ({
         </div>
       </div>
 
-      <OrdersTable v-if="visible.length" :views="visible" />
+      <OrdersTable v-if="visible.length" :views="visible" @select="selectedId = $event.order.id" />
       <EmptyState v-else :icon="SearchX" title="Nenhum pedido encontrado" description="Ajuste os filtros ou cadastre um novo pedido.">
         <AppButton v-if="hasFilters" @click="clearFilters">Limpar filtros</AppButton>
         <AppButton v-if="session.can('orders.create')" variant="primary" :to="{ name: 'order-new' }">Novo pedido</AppButton>
@@ -189,5 +191,7 @@ const totals = computed(() => ({
         <AppButton @click="limit += PAGE">Mostrar mais {{ Math.min(PAGE, filtered.length - visible.length) }} de {{ filtered.length - visible.length }} restantes</AppButton>
       </div>
     </div>
+  
+    <OrderStatusModal :order-id="selectedId" @close="selectedId = null" />
   </div>
 </template>

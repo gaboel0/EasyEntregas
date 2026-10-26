@@ -31,7 +31,7 @@ function confirm() {
 </script>
 
 <template>
-  <AppModal :open="state.open" :title="state.title" :description="state.reason ? state.description : undefined" size="sm" @close="settle(false)">
+  <AppModal elevated :open="state.open" :title="state.title" :description="state.reason ? state.description : undefined" size="sm" @close="settle(false)">
     <form v-if="state.reason" id="confirm-form" @submit.prevent="confirm">
       <FormField v-slot="{ id, invalid, describedby }" :label="state.reason.label" :required="state.reason.required" :error="reasonError">
         <textarea

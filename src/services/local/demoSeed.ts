@@ -410,6 +410,7 @@ function createOrder(ctx: SeedContext, createdAt: number, scenario: ScenarioOver
     id: orderId,
     establishmentId: est.id,
     number,
+    fulfillment: 'delivery',
     customerName: `${rng.pick(FIRST_NAMES)} ${rng.pick(LAST_NAMES)}`,
     customerPhone: `(11) 9${rng.int(6000, 9999)}-${rng.int(1000, 9999)}`,
     address: {
@@ -544,6 +545,52 @@ function createOrder(ctx: SeedContext, createdAt: number, scenario: ScenarioOver
   finish()
 }
 
+/** Pedido para retirada no balcão: sem endereço, frete, motoboy nem entrega logística. */
+function createPickupOrder(ctx: SeedContext, createdAt: number): void {
+  const { rng, plan, db, now } = ctx
+  const est = plan.establishment
+  const attendant = plan.users.find((u) => u.role === 'attendant') ?? plan.users[0]!
+  const actor: Actor = { type: 'user', id: attendant.id, name: attendant.name }
+  const items = buildItems(ctx)
+  const method = rng.weighted<PaymentMethod>([['pix', 40], ['credit_card', 25], ['debit_card', 15], ['cash', 20]])
+  const iso = (ms: number) => new Date(ms).toISOString()
+  const orderId = seqId('ord')
+  const prep = rng.between(1, 4)
+  const ready = prep + rng.between(12, 22)
+  const picked = ready + rng.between(3, 25)
+  const order: Order = {
+    id: orderId,
+    establishmentId: est.id,
+    number: ctx.nextNumber++,
+    fulfillment: 'pickup',
+    customerName: `${rng.pick(FIRST_NAMES)} ${rng.pick(LAST_NAMES)}`,
+    customerPhone: `(11) 9${rng.int(6000, 9999)}-${rng.int(1000, 9999)}`,
+    address: { street: '', number: '', district: '', city: '', state: '', location: null, distanceKm: null, distanceSource: null },
+    source: rng.weighted<OrderSource>([['whatsapp', 50], ['phone', 25], ['instagram', 15], ['counter', 10]]),
+    items,
+    productsTotal: productsTotal(items),
+    freightFee: 0,
+    payment: { method, changeFor: null },
+    status: 'received',
+    createdAt: iso(createdAt),
+    updatedAt: iso(createdAt),
+    createdBy: attendant.id,
+  }
+  const history: OrderHistoryEntry[] = []
+  const step = (from: OrderStatus | null, to: OrderStatus, minutes: number, note?: string): boolean => {
+    const at = createdAt + minutes * MIN
+    if (at > now) return false
+    history.push({ kind: 'status_change', id: seqId('hst'), establishmentId: est.id, orderId, at: iso(at), actor, from, to, note })
+    order.status = to
+    order.updatedAt = iso(at)
+    return true
+  }
+  step(null, 'received', 0, 'Pedido para retirada no balcão.')
+  if (step('received', 'preparing', prep) && step('preparing', 'ready_for_pickup', ready)) step('ready_for_pickup', 'delivered', picked)
+  db.orders.push(order)
+  db.orderHistory.push(...history)
+}
+
 function seedEstablishment(db: DatabaseShape, plan: EstablishmentPlan, now: Date, rng: Rng): void {
   const est = plan.establishment
   const settings: OperationalSettings = { ...plan.settings, establishmentId: est.id, updatedAt: now.toISOString() }
@@ -589,6 +636,8 @@ function seedEstablishment(db: DatabaseShape, plan: EstablishmentPlan, now: Date
         roll < 0.04 ? { kind: 'cancel_before_dispatch' } : roll < 0.055 ? { kind: 'fail' } : roll < 0.075 ? { kind: 'fail_then_retry' } : null
       createOrder(ctx, time, scenario, false)
     }
+    // Retiradas no balcão do dia (sem entrega).
+    for (let n = rng.int(2, 4); n > 0; n--) createPickupOrder(ctx, start.getTime() + rng.between(0, windowMin) * MIN)
   }
 
   // Hoje: pedidos nas últimas ~3 horas, em diferentes estágios da operação.
@@ -604,6 +653,7 @@ function seedEstablishment(db: DatabaseShape, plan: EstablishmentPlan, now: Date
     else if (i === Math.floor(todayCount * 0.45)) scenario = { kind: 'fail' }
     else if (i === Math.floor(todayCount * 0.55) || i === Math.floor(todayCount * 0.62)) scenario = { kind: 'long_wait' }
     createOrder(ctx, createdAt, scenario, true)
+    if (i % 6 === 2) createPickupOrder(ctx, createdAt + 2 * MIN)
   }
 
   db.orderCounters[est.id] = ctx.nextNumber

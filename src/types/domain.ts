@@ -72,6 +72,9 @@ export type Permission =
 // Pedido (a venda)
 // ---------------------------------------------------------------------------
 
+/** Entrega por motoboy ou retirada pelo cliente no balcão (sem entrega logística). */
+export type Fulfillment = 'delivery' | 'pickup'
+
 export type OrderSource = 'whatsapp' | 'instagram' | 'phone' | 'counter' | 'other'
 
 export type OrderStatus =
@@ -114,6 +117,8 @@ export interface Order {
   establishmentId: ID
   /** Número sequencial legível por estabelecimento (ex.: 1042). */
   number: number
+  /** Pedidos antigos sem o campo contam como entrega. */
+  fulfillment?: Fulfillment
   customerName: string
   customerPhone: string
   address: DeliveryAddress

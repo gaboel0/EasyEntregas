@@ -1,4 +1,4 @@
-import type { DeliveryStatus, OrderStatus } from '@/types/domain'
+import type { DeliveryStatus, Fulfillment, Order, OrderStatus } from '@/types/domain'
 
 /**
  * Máquina de estados do pedido. Estas regras são a fonte de verdade no frontend
@@ -41,17 +41,36 @@ const TRANSITIONS: Record<OrderStatus, readonly OrderStatus[]> = {
 
 export interface TransitionContext {
   hasCourier: boolean
+  fulfillment?: Fulfillment
 }
+
+export const isPickup = (order: Pick<Order, 'fulfillment'>): boolean => order.fulfillment === 'pickup'
+
+/** Retirada: o cliente busca no balcão, então não há despacho nem saída para entrega. */
+const PICKUP_TRANSITIONS: Record<OrderStatus, readonly OrderStatus[]> = {
+  received: ['preparing', 'cancelled'],
+  preparing: ['ready_for_pickup', 'cancelled'],
+  ready_for_pickup: ['delivered', 'cancelled'],
+  awaiting_courier: [],
+  out_for_delivery: [],
+  delivery_failed: [],
+  delivered: [],
+  cancelled: [],
+}
+
+export const PICKUP_FLOW: readonly OrderStatus[] = ['received', 'preparing', 'ready_for_pickup', 'delivered']
+
+export const flowFor = (fulfillment?: Fulfillment): readonly OrderStatus[] => (fulfillment === 'pickup' ? PICKUP_FLOW : ORDER_FLOW)
 
 export type TransitionCheck = { allowed: true } | { allowed: false; reason: string }
 
-export function allowedTargets(from: OrderStatus): readonly OrderStatus[] {
-  return TRANSITIONS[from]
+export function allowedTargets(from: OrderStatus, fulfillment?: Fulfillment): readonly OrderStatus[] {
+  return (fulfillment === 'pickup' ? PICKUP_TRANSITIONS : TRANSITIONS)[from]
 }
 
 export function canTransition(from: OrderStatus, to: OrderStatus, ctx: TransitionContext): TransitionCheck {
   if (from === to) return { allowed: false, reason: 'O pedido já está neste status.' }
-  if (!TRANSITIONS[from].includes(to)) {
+  if (!allowedTargets(from, ctx.fulfillment).includes(to)) {
     return {
       allowed: false,
       reason: `Não é possível mudar de "${ORDER_STATUS_LABEL[from]}" para "${ORDER_STATUS_LABEL[to]}".`,
@@ -64,11 +83,12 @@ export function canTransition(from: OrderStatus, to: OrderStatus, ctx: Transitio
 }
 
 /** Próximo passo do fluxo principal, usado nos botões de ação rápida. */
-export function nextStatus(from: OrderStatus): OrderStatus | null {
-  if (from === 'delivery_failed') return 'awaiting_courier'
-  const index = ORDER_FLOW.indexOf(from)
-  if (index === -1 || index === ORDER_FLOW.length - 1) return null
-  return ORDER_FLOW[index + 1] ?? null
+export function nextStatus(from: OrderStatus, fulfillment?: Fulfillment): OrderStatus | null {
+  if (from === 'delivery_failed') return fulfillment === 'pickup' ? null : 'awaiting_courier'
+  const flow = flowFor(fulfillment)
+  const index = flow.indexOf(from)
+  if (index === -1 || index === flow.length - 1) return null
+  return flow[index + 1] ?? null
 }
 
 export function isTerminal(status: OrderStatus): boolean {
@@ -128,3 +148,8 @@ export const ORDER_STATUS_ACTION_LABEL: Record<OrderStatus, string> = {
 }
 
 export const ALL_ORDER_STATUSES: readonly OrderStatus[] = [...ORDER_FLOW, 'delivery_failed', 'cancelled']
+
+/** Rótulo do status considerando a retirada ("Retirado" em vez de "Entregue"). */
+export function statusLabel(status: OrderStatus, fulfillment?: Fulfillment): string {
+  return fulfillment === 'pickup' && status === 'delivered' ? 'Retirado' : ORDER_STATUS_LABEL[status]
+}

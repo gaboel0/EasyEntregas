@@ -143,7 +143,7 @@ async function submit() {
   <AppModal :open="open" size="lg" persistent :title="courier ? `Editar ${courier.name}` : 'Cadastrar motoboy'" description="Dados do entregador e do vínculo com este estabelecimento." @close="emit('close')">
     <form id="courier-form" novalidate class="space-y-5" @submit.prevent="submit">
       <fieldset class="grid gap-4 sm:grid-cols-6">
-        <legend class="mb-2 text-xs font-semibold tracking-wide text-slate-500 uppercase sm:col-span-6">Identificação</legend>
+        <legend class="mb-2 text-xs font-semibold text-slate-700 sm:col-span-6">Identificação</legend>
         <FormField v-slot="{ id, invalid, describedby }" class="sm:col-span-4" label="Nome completo" required :error="error('name')">
           <input :id="id" v-model="form.name" class="field-input" maxlength="120" autofocus :aria-invalid="invalid || undefined" :aria-describedby="describedby" />
         </FormField>
@@ -167,7 +167,7 @@ async function submit() {
       </fieldset>
 
       <fieldset class="grid gap-4 sm:grid-cols-6">
-        <legend class="mb-2 text-xs font-semibold tracking-wide text-slate-500 uppercase sm:col-span-6">Remuneração</legend>
+        <legend class="mb-2 text-xs font-semibold text-slate-700 sm:col-span-6">Remuneração</legend>
         <FormField v-slot="{ id }" class="sm:col-span-2" label="Forma de remuneração" required>
           <select :id="id" v-model="form.compensation.model" class="field-input">
             <option v-for="(label, key) in COMPENSATION_MODEL_LABEL" :key="key" :value="key">{{ label }}</option>
@@ -183,7 +183,7 @@ async function submit() {
       </fieldset>
 
       <fieldset class="grid gap-4 sm:grid-cols-6">
-        <legend class="mb-2 text-xs font-semibold tracking-wide text-slate-500 uppercase sm:col-span-6">Veículo</legend>
+        <legend class="mb-2 text-xs font-semibold text-slate-700 sm:col-span-6">Veículo</legend>
         <FormField v-slot="{ id }" class="sm:col-span-2" label="Tipo">
           <select :id="id" v-model="form.vehicle.type" class="field-input">
             <option v-for="(label, key) in VEHICLE_TYPE_LABEL" :key="key" :value="key">{{ label }}</option>

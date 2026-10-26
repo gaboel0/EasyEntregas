@@ -50,7 +50,7 @@ onBeforeUnmount(() => window.removeEventListener('keydown', onKeydown))
     <AppSidebar />
 
     <div class="app-content flex min-h-screen min-w-0 flex-col">
-      <header class="sticky top-0 z-30 border-b border-slate-100 bg-surface/90 backdrop-blur">
+      <header class="relative z-30">
         <div class="flex h-14 items-center gap-3 px-4 lg:px-6">
           <button
             type="button"
@@ -69,13 +69,13 @@ onBeforeUnmount(() => window.removeEventListener('keydown', onKeydown))
           <div class="ml-auto flex items-center gap-1.5">
             <span
               v-if="session.isDemo"
-              class="hidden items-center gap-1 rounded-full bg-amber-50 px-2.5 py-1 text-[11px] font-medium text-amber-800 ring-1 ring-amber-200 xl:inline-flex"
+              class="hidden items-center gap-1 rounded-full bg-amber-50 px-2.5 py-1 text-xs font-medium text-amber-800 ring-1 ring-amber-200 xl:inline-flex"
               title="Os dados exibidos são fictícios e ficam salvos apenas neste navegador."
             >
               <FlaskConical :size="12" aria-hidden="true" /> Dados demonstrativos
             </span>
-            <AppButton v-if="session.can('orders.create')" variant="primary" size="sm" :icon="Plus" :to="{ name: 'order-new' }" title="Novo pedido (atalho: N)">
-              <span class="hidden sm:inline">Novo pedido</span>
+            <AppButton v-if="session.can('orders.create')" size="sm" :icon="Plus" :to="{ name: 'order-new' }" title="Cadastrar pedido manualmente (atalho: N)">
+              <span class="hidden sm:inline">Pedido manual</span>
             </AppButton>
             <ThemeToggle />
             <NotificationsMenu />

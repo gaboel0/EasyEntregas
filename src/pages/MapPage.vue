@@ -38,7 +38,7 @@ const selectedId = computed(() => (typeof route.query.order === 'string' ? route
 const selected = computed(() => (selectedId.value ? orders.viewById.get(selectedId.value) ?? null : null))
 const assignTarget = ref<OrderView | null>(null)
 
-const active = computed(() => orders.views.filter((v) => ACTIVE_STATUSES.includes(v.order.status)))
+const active = computed(() => orders.views.filter((v) => ACTIVE_STATUSES.includes(v.order.status) && v.order.fulfillment !== 'pickup'))
 const located = computed(() => active.value.filter((v) => v.order.address.location && visible.value[categoryOf(v.order.status)!]))
 const unlocated = computed(() => active.value.filter((v) => !v.order.address.location))
 const counts = computed(() =>
@@ -188,7 +188,7 @@ const listByCategory = computed(() =>
                     <span class="block truncate font-medium text-slate-800">{{ formatOrderNumber(v.order.number) }} · {{ v.order.customerName }}</span>
                     <span class="block truncate text-xs text-slate-500">{{ v.order.address.district }}{{ v.courier ? ` · ${v.courier.name.split(' ')[0]}` : '' }}</span>
                   </span>
-                  <span v-if="v.isDispatchLate" class="shrink-0 rounded-full bg-amber-100 px-1.5 text-[11px] font-medium text-amber-800">atrasado</span>
+                  <span v-if="v.isDispatchLate" class="shrink-0 rounded-full bg-amber-100 px-1.5 text-xs font-medium text-amber-800">atrasado</span>
                 </button>
               </li>
             </ul>
@@ -225,7 +225,7 @@ const listByCategory = computed(() =>
             <span class="size-3 rounded bg-sidebar" aria-hidden="true" /> Estabelecimento
           </p>
         </div>
-        <div class="absolute top-3 right-3 z-[400] flex max-w-xs items-start gap-2 rounded-lg bg-surface/95 p-2.5 text-[11px] text-slate-600 shadow-md">
+        <div class="absolute top-3 right-3 z-[400] flex max-w-xs items-start gap-2 rounded-lg bg-surface/95 p-2.5 text-xs text-slate-600 shadow-md">
           <Satellite :size="14" class="mt-0.5 shrink-0" aria-hidden="true" />
           Rastreamento dos motoboys em tempo real será exibido quando o aplicativo do entregador estiver conectado.
         </div>

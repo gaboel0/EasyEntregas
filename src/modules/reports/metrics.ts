@@ -75,7 +75,7 @@ export function computeMetrics(views: readonly OrderView[]): PeriodMetrics {
     cancelled: cancelled.length,
     failedOpen: failedOpen.length,
     inPreparation: views.filter((v) => v.order.status === 'received' || v.order.status === 'preparing').length,
-    awaitingDispatch: views.filter((v) => PRE_DISPATCH_STATUSES.includes(v.order.status) && !v.delivery?.courierId).length,
+    awaitingDispatch: views.filter((v) => PRE_DISPATCH_STATUSES.includes(v.order.status) && v.order.fulfillment !== 'pickup' && !v.delivery?.courierId).length,
     awaitingCourier: views.filter((v) => v.order.status === 'awaiting_courier').length,
     outForDelivery: views.filter((v) => v.order.status === 'out_for_delivery').length,
     lateDispatch: views.filter((v) => v.isDispatchLate).length,

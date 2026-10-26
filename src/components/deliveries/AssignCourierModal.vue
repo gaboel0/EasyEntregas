@@ -104,7 +104,7 @@ async function confirm() {
               <span class="text-sm font-semibold text-slate-900">{{ o.view.profile.name }}</span>
               <span class="text-xs text-slate-400">{{ o.view.profile.link.internalCode }}</span>
               <CourierStatusBadge :status="o.view.status" :overloaded="o.view.overloaded" />
-              <span v-if="o.isCurrent" class="text-[11px] font-medium text-brand-700">atual</span>
+              <span v-if="o.isCurrent" class="text-xs font-medium text-brand-700">atual</span>
             </span>
             <span class="mt-1 block text-xs text-slate-500">
               {{ o.view.activeDeliveries.length }}/{{ settings.settings?.maxConcurrentDeliveriesPerCourier }} entregas ativas ·

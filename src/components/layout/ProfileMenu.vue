@@ -56,7 +56,7 @@ async function switchTo(establishmentId: string, userId: string, close: () => vo
         </span>
         <span class="hidden text-left md:block">
           <span class="block max-w-36 truncate text-sm leading-tight font-medium text-slate-900">{{ session.user?.name }}</span>
-          <span class="block text-[11px] leading-tight text-slate-500">{{ session.user ? ROLE_LABEL[session.user.role] : '' }}</span>
+          <span class="block text-xs leading-tight text-slate-500">{{ session.user ? ROLE_LABEL[session.user.role] : '' }}</span>
         </span>
         <ChevronDown :size="14" class="hidden text-slate-400 md:block" aria-hidden="true" />
       </button>
@@ -81,8 +81,8 @@ async function switchTo(establishmentId: string, userId: string, close: () => vo
         {{ isDark ? 'Tema claro' : 'Tema escuro' }}
       </button>
       <div v-if="session.isDemo" class="border-t border-slate-100 px-2 py-2">
-        <p class="px-2 pb-1 text-[11px] font-medium tracking-wide text-slate-500 uppercase">Simular sessão (demonstração)</p>
-        <p class="px-2 pb-2 text-[11px] text-slate-500">Troque de estabelecimento ou perfil para ver o isolamento de dados e as permissões.</p>
+        <p class="px-2 pb-1 text-xs font-semibold text-slate-700">Simular sessão (demonstração)</p>
+        <p class="px-2 pb-2 text-xs text-slate-500">Troque de estabelecimento ou perfil para ver o isolamento de dados e as permissões.</p>
         <div v-for="est in session.demoOptions" :key="est.id" class="mb-1">
           <p class="px-2 py-1 text-xs font-semibold text-slate-700">{{ est.name }}</p>
           <button

@@ -9,6 +9,7 @@ const NOW = new Date('2026-10-26T21:00:00-03:00')
 
 function sampleInput(overrides: Partial<OrderInput> = {}): OrderInput {
   return {
+    fulfillment: 'delivery',
     customerName: 'Cliente Teste',
     customerPhone: '(11) 98888-7777',
     address: {

@@ -37,15 +37,21 @@ export function useOrderActions() {
   const toast = useToast()
 
   function actionsFor(view: OrderView): StatusAction[] {
-    const ctx = { hasCourier: !!view.delivery?.courierId }
-    const next = nextStatus(view.order.status)
-    return allowedTargets(view.order.status)
+    const fulfillment = view.order.fulfillment
+    const ctx = { hasCourier: !!view.delivery?.courierId, fulfillment }
+    const next = nextStatus(view.order.status, fulfillment)
+    return allowedTargets(view.order.status, fulfillment)
       .filter((to) => (to === 'cancelled' ? session.can('orders.cancel') : session.can('orders.change_status')))
       .map((to) => {
         const check = canTransition(view.order.status, to, ctx)
         return {
           to,
-          label: view.order.status === 'delivery_failed' && to === 'awaiting_courier' ? 'Nova tentativa de entrega' : ORDER_STATUS_ACTION_LABEL[to],
+          label:
+            view.order.status === 'delivery_failed' && to === 'awaiting_courier'
+              ? 'Nova tentativa de entrega'
+              : to === 'delivered' && fulfillment === 'pickup'
+                ? 'Confirmar retirada'
+                : ORDER_STATUS_ACTION_LABEL[to],
           kind: to === 'cancelled' || to === 'delivery_failed' ? 'danger' : to === next ? 'primary' : 'secondary',
           blockedReason: check.allowed ? undefined : check.reason,
         } satisfies StatusAction
@@ -76,12 +82,14 @@ export function useOrderActions() {
       note = answer.reason
     } else if (to === 'delivered' || to === 'out_for_delivery') {
       const answer = await confirm({
-        title: to === 'delivered' ? `Confirmar entrega do pedido ${code}?` : `Registrar saída do pedido ${code}?`,
+        title: to === 'delivered' ? (view.order.fulfillment === 'pickup' ? `Confirmar retirada do pedido ${code}?` : `Confirmar entrega do pedido ${code}?`) : `Registrar saída do pedido ${code}?`,
         description:
-          to === 'delivered'
+          to === 'delivered' && view.order.fulfillment === 'pickup'
+            ? 'Confirme apenas quando o cliente tiver retirado o pedido no balcão.'
+            : to === 'delivered'
             ? `Confirme apenas quando o cliente tiver recebido o pedido. O custo da entrega será registrado com os parâmetros atuais.`
             : `${view.courier?.name ?? 'O motoboy'} sai agora com o pedido para ${view.order.address.street}, ${view.order.address.number}.`,
-        confirmLabel: to === 'delivered' ? 'Confirmar entrega' : 'Registrar saída',
+        confirmLabel: to === 'delivered' ? (view.order.fulfillment === 'pickup' ? 'Confirmar retirada' : 'Confirmar entrega') : 'Registrar saída',
       })
       if (!answer.confirmed) return false
     }
@@ -134,7 +142,7 @@ export function useOrderActions() {
     }
   }
 
-  const canAssign = (view: OrderView) => session.can('dispatch.assign') && canAssignCourier(view.order.status)
+  const canAssign = (view: OrderView) => session.can('dispatch.assign') && view.order.fulfillment !== 'pickup' && canAssignCourier(view.order.status)
   const isPending = (id: ID) => pending.has(id)
 
   return { actionsFor, primaryAction, changeStatus, assignCourier, unassignCourier, canAssign, isPending }

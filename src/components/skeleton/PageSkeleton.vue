@@ -1,7 +1,6 @@
 <script setup lang="ts">
 import AppSkeleton from './AppSkeleton.vue'
 import SkeletonRegion from './SkeletonRegion.vue'
-import SkeletonKpis from './SkeletonKpis.vue'
 import SkeletonCard from './SkeletonCard.vue'
 import SkeletonTable from './SkeletonTable.vue'
 import type { SkeletonVariant } from './variants'
@@ -22,17 +21,9 @@ withDefaults(defineProps<{ variant?: SkeletonVariant }>(), { variant: 'generic' 
     </div>
 
     <template v-if="variant === 'dashboard'">
-      <SkeletonKpis :count="10" />
-      <div class="mt-5 grid gap-5 xl:grid-cols-3">
-        <div class="xl:col-span-2"><SkeletonCard height="14rem" /></div>
+      <div class="grid items-start gap-6 xl:grid-cols-[minmax(0,1fr)_22rem]">
+        <div class="card"><SkeletonTable :rows="7" :cols="4" /></div>
         <SkeletonCard :lines="8" />
-      </div>
-      <div class="mt-5 grid gap-5 xl:grid-cols-3">
-        <div class="card xl:col-span-2">
-          <div class="card-header"><AppSkeleton w="9rem" h="0.9rem" /></div>
-          <SkeletonTable :rows="5" :cols="5" />
-        </div>
-        <SkeletonCard :lines="7" />
       </div>
     </template>
 

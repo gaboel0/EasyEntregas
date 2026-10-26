@@ -36,6 +36,7 @@ import {
 } from '@/modules/settings/settingsSchema'
 import {
   canAssignCourier,
+  isPickup,
   canEditOrder,
   canTransition,
   deliveryStatusFor,
@@ -161,6 +162,7 @@ export function createLocalDataSource(db: LocalDatabase, options: LocalDataSourc
   }
 
   function assignInternal(data: DatabaseShape, establishmentId: ID, order: Order, courierId: ID, user: User) {
+    if (isPickup(order)) throw new ServiceError('invalid_transition', 'Pedidos para retirada não usam motoboy.')
     if (!canAssignCourier(order.status)) {
       throw new ServiceError('invalid_transition', `Não é possível atribuir motoboy a um pedido "${ORDER_STATUS_LABEL[order.status]}".`)
     }
@@ -196,6 +198,7 @@ export function createLocalDataSource(db: LocalDatabase, options: LocalDataSourc
       notes: i.notes || undefined,
     }))
     return {
+      fulfillment: input.fulfillment,
       customerName: input.customerName,
       customerPhone: input.customerPhone,
       address: {
@@ -249,10 +252,13 @@ export function createLocalDataSource(db: LocalDatabase, options: LocalDataSourc
           createdBy: user.id,
         }
         data.orders.push(order)
-        data.deliveries.push({
-          id: createId('dlv'), establishmentId, orderId: order.id, attempt: 1, courierId: null, status: 'unassigned',
-          assignedAt: null, dispatchedAt: null, completedAt: null, costSnapshot: null, createdAt: at,
-        })
+        // Retirada no balcão não gera entrega (operação logística).
+        if (!isPickup(order)) {
+          data.deliveries.push({
+            id: createId('dlv'), establishmentId, orderId: order.id, attempt: 1, courierId: null, status: 'unassigned',
+            assignedAt: null, dispatchedAt: null, completedAt: null, costSnapshot: null, createdAt: at,
+          })
+        }
         pushHistory(data, {
           kind: 'status_change', id: createId('hst'), establishmentId, orderId: order.id, at, actor: actorOf(user),
           from: null, to: 'received', note: 'Pedido cadastrado no painel.',
@@ -301,6 +307,21 @@ export function createLocalDataSource(db: LocalDatabase, options: LocalDataSourc
         const permission: Permission = request.to === 'cancelled' ? 'orders.cancel' : 'orders.change_status'
         const { user, establishmentId } = require(data, permission)
         const order = findOrder(data, establishmentId, orderId)
+        if (isPickup(order)) {
+          const pickupCheck = canTransition(order.status, request.to, { hasCourier: false, fulfillment: 'pickup' })
+          if (!pickupCheck.allowed) throw new ServiceError('invalid_transition', pickupCheck.reason)
+          const pickupNote = request.note?.trim()
+          if (requiresReason(request.to) && !pickupNote) throw new ServiceError('validation', 'Informe o motivo para registrar esta alteração.')
+          const pickupAt = isoNow()
+          const pickupFrom: OrderStatus = order.status
+          order.status = request.to
+          order.updatedAt = pickupAt
+          pushHistory(data, {
+            kind: 'status_change', id: createId('hst'), establishmentId, orderId, at: pickupAt, actor: actorOf(user), from: pickupFrom, to: request.to,
+            note: pickupNote || undefined,
+          })
+          return aggregate(data, order)
+        }
         let delivery = currentDelivery(data, orderId)
         const check = canTransition(order.status, request.to, { hasCourier: !!delivery.courierId })
         if (!check.allowed) throw new ServiceError('invalid_transition', check.reason)
@@ -375,6 +396,7 @@ export function createLocalDataSource(db: LocalDatabase, options: LocalDataSourc
       return db.write((data) => {
         const { user, establishmentId } = require(data, 'dispatch.assign')
         const order = findOrder(data, establishmentId, orderId)
+        if (isPickup(order)) return aggregate(data, order)
         if (!canAssignCourier(order.status)) {
           throw new ServiceError('invalid_transition', 'O motoboy só pode ser removido antes da saída para entrega.')
         }

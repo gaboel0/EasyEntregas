@@ -35,8 +35,8 @@ const byWaiting = (a: OrderView, b: OrderView) =>
   (b.waitingMinutes ?? -1) - (a.waitingMinutes ?? -1) ||
   a.order.createdAt.localeCompare(b.order.createdAt)
 
-const queue = computed(() => orders.views.filter((v) => PRE_DISPATCH_STATUSES.includes(v.order.status) && !v.delivery?.courierId).sort(byWaiting))
-const assigned = computed(() => orders.views.filter((v) => PRE_DISPATCH_STATUSES.includes(v.order.status) && !!v.delivery?.courierId).sort(byWaiting))
+const queue = computed(() => orders.views.filter((v) => PRE_DISPATCH_STATUSES.includes(v.order.status) && v.order.fulfillment !== 'pickup' && !v.delivery?.courierId).sort(byWaiting))
+const assigned = computed(() => orders.views.filter((v) => PRE_DISPATCH_STATUSES.includes(v.order.status) && v.order.fulfillment !== 'pickup' && !!v.delivery?.courierId).sort(byWaiting))
 const failed = computed(() => orders.views.filter((v) => v.order.status === 'delivery_failed'))
 const inTransit = computed(() =>
   orders.views
@@ -104,33 +104,33 @@ async function toggleShift(courierId: string, available: boolean) {
   <div>
     <PageHeader title="Despacho" description="Distribua os pedidos entre os motoboys e acompanhe as entregas em andamento." />
 
-    <section aria-label="Resumo do despacho" class="card mb-5 grid grid-cols-2 divide-slate-100 sm:grid-cols-3 lg:grid-cols-6 lg:divide-x">
-      <div class="p-3.5">
+    <section aria-label="Resumo do despacho" class="mb-6 grid grid-cols-2 gap-x-6 gap-y-4 sm:grid-cols-3 lg:grid-cols-6">
+      <div>
         <p class="text-xs text-slate-500">Aguardando atribuição</p>
         <p class="tabular mt-1 text-xl font-semibold" :class="queue.some((v) => v.isDispatchLate) ? 'text-amber-700' : 'text-slate-900'">{{ queue.length }}</p>
-        <p class="text-[11px] text-slate-500">{{ queue.filter((v) => v.isDispatchLate).length }} acima de {{ settings.settings?.dispatchAlertMinutes }} min</p>
+        <p class="text-xs text-slate-500">{{ queue.filter((v) => v.isDispatchLate).length }} acima de {{ settings.settings?.dispatchAlertMinutes }} min</p>
       </div>
-      <div class="p-3.5">
+      <div>
         <p class="text-xs text-slate-500">Atribuídos, aguardando saída</p>
         <p class="tabular mt-1 text-xl font-semibold text-slate-900">{{ assigned.length }}</p>
       </div>
-      <div class="p-3.5">
+      <div>
         <p class="text-xs text-slate-500">Em rota</p>
         <p class="tabular mt-1 text-xl font-semibold text-slate-900">{{ inTransit.length }}</p>
       </div>
-      <div class="p-3.5">
+      <div>
         <p class="text-xs text-slate-500">Fretes em aberto</p>
         <p class="tabular mt-1 text-xl font-semibold text-slate-900">{{ formatCurrency(economics.freight) }}</p>
-        <p class="text-[11px] text-slate-500">pedidos ainda não entregues</p>
+        <p class="text-xs text-slate-500">pedidos ainda não entregues</p>
       </div>
-      <div class="p-3.5">
+      <div>
         <p class="text-xs text-slate-500">Custo estimado</p>
         <p class="tabular mt-1 text-xl font-semibold text-slate-900">{{ formatCurrency(economics.cost) }}</p>
       </div>
-      <div class="p-3.5">
+      <div>
         <p class="text-xs text-slate-500">Margem estimada</p>
         <p class="tabular mt-1 text-xl font-semibold" :class="economics.result < 0 ? 'text-rose-700' : 'text-emerald-700'">{{ formatPercent(economics.margin) }}</p>
-        <p class="tabular text-[11px] text-slate-500">resultado {{ formatCurrency(economics.result) }}</p>
+        <p class="tabular text-xs text-slate-500">resultado {{ formatCurrency(economics.result) }}</p>
       </div>
     </section>
 
@@ -206,9 +206,9 @@ async function toggleShift(courierId: string, available: boolean) {
                   :class="n <= c.activeDeliveries.length ? (c.overloaded ? 'bg-amber-500' : 'bg-brand-500') : 'bg-slate-200'"
                 />
               </div>
-              <span class="tabular text-[11px] text-slate-500">{{ c.activeDeliveries.length }}/{{ settings.settings?.maxConcurrentDeliveriesPerCourier }}</span>
+              <span class="tabular text-xs text-slate-500">{{ c.activeDeliveries.length }}/{{ settings.settings?.maxConcurrentDeliveriesPerCourier }}</span>
             </div>
-            <div class="tabular mt-1 flex items-center justify-between text-[11px] text-slate-500">
+            <div class="tabular mt-1 flex items-center justify-between text-xs text-slate-500">
               <span>
                 {{ deliveredToday.get(c.profile.id) ?? 0 }} entregue(s) hoje
                 <template v-if="c.onRouteSince"> · em rota há {{ formatDuration(minutesBetween(c.onRouteSince, now)) }}</template>

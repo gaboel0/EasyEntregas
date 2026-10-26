@@ -62,7 +62,7 @@ function historyDot(kind: string, to?: string) {
           <ArrowLeft :size="13" aria-hidden="true" /> Pedidos
         </RouterLink>
         <div class="mb-1.5 flex flex-wrap items-center gap-2 text-xs text-slate-500">
-          <StatusBadge :status="view.order.status" size="md" />
+          <StatusBadge :status="view.order.status" size="md" :pickup="view.order.fulfillment === 'pickup'" />
           <span>Recebido em {{ formatDateTime(view.order.createdAt) }} via {{ ORDER_SOURCE_LABEL[view.order.source] }}</span>
           <span v-if="view.isDispatchLate" class="inline-flex items-center gap-1 rounded-full bg-amber-100 px-2 py-0.5 font-medium text-amber-800">
             <Clock :size="12" aria-hidden="true" /> aguardando despacho há {{ formatDuration(view.waitingMinutes) }}
@@ -93,7 +93,7 @@ function historyDot(kind: string, to?: string) {
     </p>
 
     <section class="card mb-5 p-4 sm:p-5" aria-label="Etapas do pedido">
-      <OrderProgress :status="view.order.status" :history="view.history" />
+      <OrderProgress :status="view.order.status" :history="view.history" :fulfillment="view.order.fulfillment" />
       <p
         v-if="view.order.status === 'cancelled' || view.order.status === 'delivery_failed'"
         class="mt-4 rounded-lg px-3 py-2 text-sm"
@@ -116,13 +116,17 @@ function historyDot(kind: string, to?: string) {
                 <Phone :size="13" aria-hidden="true" /> {{ formatPhone(view.order.customerPhone) }}
               </a>
             </div>
-            <div>
+            <div v-if="view.order.fulfillment === 'pickup'">
+              <p class="font-medium text-slate-900">Retirada no balcão</p>
+              <p class="text-slate-500">O cliente busca o pedido no estabelecimento. Sem entrega nem motoboy.</p>
+            </div>
+            <div v-else>
               <p class="text-slate-900">{{ view.order.address.street }}, {{ view.order.address.number }}</p>
               <p class="text-slate-600">{{ view.order.address.district }} · {{ view.order.address.city }}/{{ view.order.address.state }}</p>
               <p v-if="view.order.address.complement" class="text-slate-600">{{ view.order.address.complement }}</p>
               <p v-if="view.order.address.reference" class="text-slate-500">Ref.: {{ view.order.address.reference }}</p>
             </div>
-            <div class="flex flex-wrap items-center gap-3 text-xs text-slate-600 sm:col-span-2">
+            <div v-if="view.order.fulfillment !== 'pickup'" class="flex flex-wrap items-center gap-3 text-xs text-slate-600 sm:col-span-2">
               <span class="inline-flex items-center gap-1">
                 <MapPin :size="13" aria-hidden="true" />
                 {{ formatKm(view.order.address.distanceKm) }} (ida)
@@ -192,7 +196,7 @@ function historyDot(kind: string, to?: string) {
       </div>
 
       <aside class="space-y-5">
-        <section class="card" aria-labelledby="d-delivery">
+        <section v-if="view.order.fulfillment !== 'pickup'" class="card" aria-labelledby="d-delivery">
           <div class="card-header">
             <h2 id="d-delivery" class="card-title">Entrega</h2>
             <span v-if="view.delivery && view.delivery.attempt > 1" class="text-xs font-medium text-slate-500">{{ view.delivery.attempt }}ª tentativa</span>
@@ -226,10 +230,10 @@ function historyDot(kind: string, to?: string) {
           </div>
         </section>
 
-        <section class="card" aria-labelledby="d-cost">
+        <section v-if="view.order.fulfillment !== 'pickup'" class="card" aria-labelledby="d-cost">
           <div class="card-header">
             <h2 id="d-cost" class="card-title">Custo e resultado do frete</h2>
-            <span class="text-[11px] text-slate-400">{{ view.economics.frozen ? 'registrado no encerramento' : 'estimativa atual' }}</span>
+            <span class="text-xs text-slate-400">{{ view.economics.frozen ? 'registrado no encerramento' : 'estimativa atual' }}</span>
           </div>
           <div class="p-4">
             <template v-if="view.delivery?.costSnapshot">

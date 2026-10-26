@@ -36,7 +36,7 @@ function onKeydown(event: KeyboardEvent, options: readonly { value: T }[], index
       {{ option.label }}
       <span
         v-if="option.count !== undefined"
-        class="tabular rounded-full px-1.5 text-[11px]"
+        class="tabular rounded-full px-1.5 text-xs"
         :class="model === option.value ? 'bg-slate-100 text-slate-700' : 'bg-slate-200/70 text-slate-500'"
       >
         {{ option.count }}

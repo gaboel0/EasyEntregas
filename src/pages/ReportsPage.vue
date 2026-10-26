@@ -243,7 +243,7 @@ function exportDays() {
               <div class="mt-1 h-2 overflow-hidden rounded-full bg-slate-100">
                 <div class="h-full rounded-full" :style="{ width: `${(s.orders / maxSource) * 100}%`, background: 'var(--primary)' }" />
               </div>
-              <p class="tabular mt-0.5 text-[11px] text-slate-500">{{ s.delivered }} entregues · {{ formatCurrency(s.productsRevenue) }} em produtos · {{ formatCurrency(s.freightRevenue) }} em fretes</p>
+              <p class="tabular mt-0.5 text-xs text-slate-500">{{ s.delivered }} entregues · {{ formatCurrency(s.productsRevenue) }} em produtos · {{ formatCurrency(s.freightRevenue) }} em fretes</p>
             </li>
           </ul>
         </section>

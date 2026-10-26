@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { useRouter, RouterLink } from 'vue-router'
+import { RouterLink } from 'vue-router'
 import { Clock, MapPinOff } from 'lucide-vue-next'
 import type { OrderView } from '@/modules/orders/orderViews'
 import StatusBadge from '@/components/ui/StatusBadge.vue'
@@ -10,19 +10,37 @@ import { formatCurrency, formatDuration, formatKm, formatOrderNumber, formatPhon
 import { useNow } from '@/composables/useNow'
 
 withDefaults(defineProps<{ views: OrderView[]; compact?: boolean; showActions?: boolean }>(), { showActions: true })
+const emit = defineEmits<{ select: [view: OrderView] }>()
 
-const router = useRouter()
 const now = useNow()
 const actions = useOrderActions()
 
 function openOrder(view: OrderView, event: MouseEvent) {
   if ((event.target as HTMLElement).closest('a, button')) return
-  router.push({ name: 'order-detail', params: { id: view.order.id } })
+  emit('select', view)
 }
 </script>
 
 <template>
-  <div class="overflow-x-auto">
+  <ul class="divide-y divide-slate-200/60 md:hidden">
+    <li v-for="v in views" :key="`m-${v.order.id}`" :class="v.isDispatchLate ? 'bg-amber-50/50' : ''">
+      <button type="button" class="block w-full px-4 py-3.5 text-left" :aria-label="`Abrir pedido ${formatOrderNumber(v.order.number)} de ${v.order.customerName}`" @click="emit('select', v)">
+        <span class="flex items-start justify-between gap-3">
+          <span class="min-w-0 font-semibold text-slate-900">{{ formatOrderNumber(v.order.number) }} {{ v.order.customerName }}</span>
+          <span class="tabular shrink-0 font-semibold text-slate-900">{{ formatCurrency(v.total) }}</span>
+        </span>
+        <span class="mt-1.5 flex flex-wrap items-center gap-2 text-xs text-slate-500">
+          <StatusBadge :status="v.order.status" :pickup="v.order.fulfillment === 'pickup'" />
+          <span>{{ ORDER_SOURCE_LABEL[v.order.source] }}, {{ formatTime(v.order.createdAt) }}</span>
+        </span>
+        <span class="mt-1 block truncate text-xs" :class="v.isDispatchLate ? 'font-medium text-amber-800' : 'text-slate-500'">
+          {{ v.order.fulfillment === 'pickup' ? 'Retirada no balcão' : v.courier ? `Motoboy ${v.courier.name.split(' ')[0]}` : v.isDispatchLate ? `Sem motoboy, pronto há ${formatDuration(v.waitingMinutes)}` : 'Sem motoboy' }}
+        </span>
+      </button>
+    </li>
+  </ul>
+
+  <div class="hidden overflow-x-auto md:block">
     <table class="table-base">
       <thead>
         <tr>
@@ -55,8 +73,9 @@ function openOrder(view: OrderView, event: MouseEvent) {
             <p class="tabular truncate text-xs text-slate-500">{{ formatPhone(v.order.customerPhone) }}</p>
           </td>
           <td class="max-w-64" :class="{ 'hidden xl:table-cell': compact }">
-            <p class="truncate text-slate-700">{{ v.order.address.street }}, {{ v.order.address.number }}</p>
-            <p class="flex items-center gap-1 truncate text-xs text-slate-500">
+            <p v-if="v.order.fulfillment === 'pickup'" class="truncate text-slate-700">Retirada no balcão</p>
+            <p v-else class="truncate text-slate-700">{{ v.order.address.street }}, {{ v.order.address.number }}</p>
+            <p v-if="v.order.fulfillment !== 'pickup'" class="flex items-center gap-1 truncate text-xs text-slate-500">
               {{ v.order.address.district }}
               <span v-if="v.order.address.distanceKm !== null">· {{ formatKm(v.order.address.distanceKm) }}</span>
               <MapPinOff v-if="!v.order.address.location" :size="12" class="text-slate-400" aria-label="sem coordenadas" />
@@ -65,11 +84,12 @@ function openOrder(view: OrderView, event: MouseEvent) {
           <td v-if="!compact" class="text-xs whitespace-nowrap text-slate-600">{{ ORDER_SOURCE_LABEL[v.order.source] }}</td>
           <td class="max-w-36 truncate text-sm">
             <span v-if="v.courier" class="text-slate-700">{{ v.courier.name.split(' ')[0] }}</span>
+            <span v-else-if="v.order.fulfillment === 'pickup'" class="text-xs text-slate-400">Retirada</span>
             <span v-else class="text-xs text-slate-400">Não atribuído</span>
           </td>
           <td class="whitespace-nowrap">
-            <StatusBadge :status="v.order.status" />
-            <p v-if="v.waitingMinutes !== null" class="mt-1 flex items-center gap-1 text-[11px]" :class="v.isDispatchLate ? 'font-semibold text-amber-700' : 'text-slate-500'">
+            <StatusBadge :status="v.order.status" :pickup="v.order.fulfillment === 'pickup'" />
+            <p v-if="v.waitingMinutes !== null" class="mt-1 flex items-center gap-1 text-xs" :class="v.isDispatchLate ? 'font-semibold text-amber-700' : 'text-slate-500'">
               <Clock :size="11" aria-hidden="true" /> pronto há {{ formatDuration(v.waitingMinutes) }}
             </p>
           </td>

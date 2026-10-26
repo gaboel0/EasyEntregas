@@ -20,9 +20,10 @@ const props = withDefaults(
 )
 
 const classes = computed(() => [
-  'inline-flex items-center justify-center gap-1.5 rounded-lg font-medium whitespace-nowrap transition-colors select-none',
+  'inline-flex items-center justify-center gap-1.5 rounded-(--radius-control) font-semibold whitespace-nowrap select-none',
+  'transition-[color,background-color,border-color,box-shadow,transform] duration-(--duration-fast) ease-(--ease-out) active:scale-[0.98]',
   'disabled:cursor-not-allowed disabled:opacity-50 aria-disabled:pointer-events-none aria-disabled:opacity-50',
-  props.size === 'sm' ? 'h-8 px-2.5 text-xs' : 'h-9 px-3.5 text-sm',
+  props.size === 'sm' ? 'h-8 px-3 text-[13px] pointer-coarse:h-10' : 'h-10 px-4 text-sm pointer-coarse:h-11',
   props.block ? 'w-full' : '',
   {
     primary: 'bg-primary text-white shadow-xs hover:bg-primary-hover active:bg-primary-active',

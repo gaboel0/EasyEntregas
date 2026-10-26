@@ -98,7 +98,7 @@ async function submit() {
       <section class="card">
         <div class="card-header">
           <h2 class="card-title">Custos de referência</h2>
-          <span class="text-[11px] text-slate-400">atualizado em {{ formatDateTime(store.current().updatedAt) }}</span>
+          <span class="text-xs text-slate-400">atualizado em {{ formatDateTime(store.current().updatedAt) }}</span>
         </div>
         <fieldset :disabled="!canEdit" class="grid gap-4 p-4 sm:grid-cols-3">
           <FormField v-slot="{ id, invalid, describedby }" label="Preço da gasolina" required :error="error('fuelPricePerLiter')">

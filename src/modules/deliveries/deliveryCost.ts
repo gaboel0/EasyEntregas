@@ -1,5 +1,6 @@
 import type { CourierProfile, Delivery, DeliveryCostSnapshot, Order, OperationalSettings } from '@/types/domain'
 import { estimateFreight, type FreightCostResult } from './freightCalculator'
+import { isPickup } from '@/modules/orders/orderWorkflow'
 
 /**
  * Aplica a calculadora de frete a um pedido real, combinando a distância do endereço,
@@ -62,6 +63,8 @@ export function deliveryEconomics(
   courier: CourierProfile | null,
   settings: OperationalSettings,
 ): DeliveryEconomics {
+  // Retirada no balcão não tem frete nem custo logístico.
+  if (isPickup(order)) return { freightFee: 0, operationalCost: 0, courierPay: 0, result: 0, frozen: true }
   if (delivery?.costSnapshot) {
     const s = delivery.costSnapshot
     return {

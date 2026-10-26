@@ -25,6 +25,7 @@ export const routes: RouteRecordRaw[] = [
     component: AppLayout,
     children: [
       { path: '', name: 'dashboard', component: () => import('@/pages/DashboardPage.vue'), meta: { skeleton: 'dashboard', title: 'Visão geral' } },
+      { path: 'analise', name: 'analysis', component: () => import('@/pages/AnalysisPage.vue'), meta: { skeleton: 'generic', title: 'Análise' } },
       { path: 'pedidos', name: 'orders', component: () => import('@/pages/OrdersPage.vue'), meta: { skeleton: 'list', title: 'Pedidos' } },
       {
         path: 'pedidos/novo',
@@ -59,7 +60,7 @@ export const routes: RouteRecordRaw[] = [
         path: 'relatorios',
         name: 'reports',
         component: () => import('@/pages/ReportsPage.vue'),
-        meta: { skeleton: 'dashboard', title: 'Relatórios', permission: 'reports.view' },
+        meta: { skeleton: 'generic', title: 'Relatórios', permission: 'reports.view' },
       },
       { path: 'configuracoes', name: 'settings', component: () => import('@/pages/SettingsPage.vue'), meta: { skeleton: 'settings', title: 'Configurações' } },
       { path: ':pathMatch(.*)*', name: 'not-found', component: () => import('@/pages/NotFoundPage.vue'), meta: { skeleton: 'generic', title: 'Página não encontrada' } },

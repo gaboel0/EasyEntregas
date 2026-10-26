@@ -2,9 +2,10 @@
 import { computed, reactive, ref, watch } from 'vue'
 import { onBeforeRouteLeave, useRoute, useRouter, RouterLink } from 'vue-router'
 import { ArrowLeft, Lock, MapPin, SearchX } from 'lucide-vue-next'
-import type { DistanceSource, GeoPoint, OrderSource, PaymentMethod } from '@/types/domain'
+import type { DistanceSource, Fulfillment, GeoPoint, OrderSource, PaymentMethod } from '@/types/domain'
 import PageHeader from '@/components/ui/PageHeader.vue'
 import FormField from '@/components/ui/FormField.vue'
+import SegmentedControl from '@/components/ui/SegmentedControl.vue'
 import NumberInput from '@/components/ui/NumberInput.vue'
 import AppButton from '@/components/ui/AppButton.vue'
 import EmptyState from '@/components/ui/EmptyState.vue'
@@ -43,6 +44,7 @@ const editing = computed(() => (editingId.value ? orders.viewById.get(editingId.
 const settings = settingsStore.current()
 
 interface FormState {
+  fulfillment: Fulfillment
   customerName: string
   customerPhone: string
   address: {
@@ -71,6 +73,7 @@ function initialState(): FormState {
   if (v) {
     const o = v.order
     return {
+      fulfillment: o.fulfillment ?? 'delivery',
       customerName: o.customerName,
       customerPhone: o.customerPhone,
       address: {
@@ -94,6 +97,7 @@ function initialState(): FormState {
     }
   }
   return {
+    fulfillment: 'delivery',
     customerName: '',
     customerPhone: '',
     address: {
@@ -128,15 +132,33 @@ function payload() {
   return {
     ...form,
     customerPhone: form.customerPhone,
-    address: { ...form.address, complement: form.address.complement || undefined, reference: form.address.reference || undefined },
+    // Retirada no balcão: sem endereço, distância, frete nem motoboy.
+    address:
+      form.fulfillment === 'pickup'
+        ? { street: '', number: '', district: '', city: '', state: '', location: null, distanceKm: null, distanceSource: null }
+        : { ...form.address, complement: form.address.complement || undefined, reference: form.address.reference || undefined },
+    freightFee: form.fulfillment === 'pickup' ? 0 : form.freightFee,
     items: form.items.map(({ id, name, quantity, unitPrice, notes }) => ({ id, name, quantity, unitPrice, notes: notes || undefined })),
     payment: { method: form.payment.method, changeFor: form.payment.method === 'cash' ? form.payment.changeFor : null },
     deliveryNotes: form.deliveryNotes || undefined,
-    courierId: editing.value ? undefined : form.courierId || null,
+    courierId: editing.value || form.fulfillment === 'pickup' ? undefined : form.courierId || null,
   }
 }
 
 watch(form, () => revalidate(payload()), { deep: true })
+
+const isPickupForm = computed(() => form.fulfillment === 'pickup')
+const fulfillmentOptions = [
+  { value: 'delivery' as Fulfillment, label: 'Entrega' },
+  { value: 'pickup' as Fulfillment, label: 'Retirada no balcão' },
+]
+watch(
+  () => form.fulfillment,
+  (value) => {
+    form.freightFee = value === 'pickup' ? 0 : settings.defaultFreightFee
+    if (value === 'pickup') form.courierId = ''
+  },
+)
 
 // Distância: o usuário pode digitar (manual) ou derivá-la do ponto no mapa (linha reta).
 const origin = computed(() => session.establishment?.location ?? null)
@@ -253,6 +275,11 @@ onBeforeRouteLeave(async () => {
         <section class="card" aria-labelledby="sec-customer">
           <div class="card-header"><h2 id="sec-customer" class="card-title">Cliente e origem</h2></div>
           <div class="grid gap-4 p-4 sm:grid-cols-2 lg:grid-cols-3">
+            <div class="sm:col-span-2 lg:col-span-3">
+              <p class="mb-1 text-xs font-medium text-slate-700">Como o cliente recebe</p>
+              <SegmentedControl v-if="!editing" v-model="form.fulfillment" :options="fulfillmentOptions" label="Como o cliente recebe" />
+              <p v-else class="text-sm text-slate-800">{{ isPickupForm ? 'Retirada no balcão' : 'Entrega' }} <span class="text-xs text-slate-500">(não pode ser alterado depois de cadastrado)</span></p>
+            </div>
             <FormField v-slot="{ id, invalid, describedby }" label="Nome do cliente" required :error="error('customerName')">
               <input :id="id" v-model="form.customerName" class="field-input" autocomplete="off" maxlength="120" :aria-invalid="invalid || undefined" :aria-describedby="describedby" autofocus />
             </FormField>
@@ -278,7 +305,7 @@ onBeforeRouteLeave(async () => {
           </div>
         </section>
 
-        <section class="card" aria-labelledby="sec-address">
+        <section v-if="!isPickupForm" class="card" aria-labelledby="sec-address">
           <div class="card-header"><h2 id="sec-address" class="card-title">Endereço de entrega</h2></div>
           <div class="grid gap-4 p-4 sm:grid-cols-6">
             <FormField v-slot="{ id, invalid, describedby }" class="sm:col-span-4" label="Rua / avenida" required :error="error('address.street')">
@@ -345,7 +372,7 @@ onBeforeRouteLeave(async () => {
         <section class="card" aria-labelledby="sec-payment">
           <div class="card-header"><h2 id="sec-payment" class="card-title">Pagamento e entrega</h2></div>
           <div class="grid gap-4 p-4 sm:grid-cols-3">
-            <FormField v-slot="{ id, invalid, describedby }" label="Valor do frete" required :error="error('freightFee')" hint="Cobrado do cliente pela entrega">
+            <FormField v-if="!isPickupForm" v-slot="{ id, invalid, describedby }" label="Valor do frete" required :error="error('freightFee')" hint="Cobrado do cliente pela entrega">
               <NumberInput :id="id" v-model="form.freightFee" prefix="R$" :invalid="invalid" :describedby="describedby" />
             </FormField>
             <FormField v-slot="{ id, invalid }" label="Forma de pagamento" required :error="error('payment.method')">
@@ -366,7 +393,7 @@ onBeforeRouteLeave(async () => {
               <textarea :id="id" v-model="form.deliveryNotes" rows="2" class="field-input resize-y" maxlength="500" placeholder="Ex.: tocar o interfone 2 vezes" :aria-invalid="invalid || undefined" />
             </FormField>
             <FormField
-              v-if="!editing && session.can('dispatch.assign')"
+              v-if="!editing && !isPickupForm && session.can('dispatch.assign')"
               v-slot="{ id }"
               class="sm:col-span-3"
               label="Motoboy responsável (opcional)"
@@ -388,14 +415,14 @@ onBeforeRouteLeave(async () => {
           <div class="card-header"><h2 id="sec-summary" class="card-title">Resumo do pedido</h2></div>
           <dl class="tabular space-y-1.5 p-4 text-sm">
             <div class="flex justify-between"><dt class="text-slate-500">Produtos</dt><dd>{{ formatCurrency(subtotal) }}</dd></div>
-            <div class="flex justify-between"><dt class="text-slate-500">Frete</dt><dd>{{ formatCurrency(form.freightFee ?? 0) }}</dd></div>
+            <div v-if="!isPickupForm" class="flex justify-between"><dt class="text-slate-500">Frete</dt><dd>{{ formatCurrency(form.freightFee ?? 0) }}</dd></div>
             <div class="flex justify-between border-t border-slate-100 pt-2 text-base font-semibold"><dt>Total a receber</dt><dd>{{ formatCurrency(total) }}</dd></div>
           </dl>
         </section>
-        <section class="card" aria-labelledby="sec-freight">
+        <section v-if="!isPickupForm" class="card" aria-labelledby="sec-freight">
           <div class="card-header">
             <h2 id="sec-freight" class="card-title">Viabilidade do frete</h2>
-            <span class="text-[11px] text-slate-400">estimativa</span>
+            <span class="text-xs text-slate-400">estimativa</span>
           </div>
           <div class="p-4">
             <FreightBreakdown :result="estimate" compact />

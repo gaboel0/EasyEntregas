@@ -8,6 +8,7 @@ import type {
   StatusChangeEntry,
 } from '@/types/domain'
 import { deliveryEconomics, type DeliveryEconomics } from '@/modules/deliveries/deliveryCost'
+import { isPickup } from '@/modules/orders/orderWorkflow'
 
 /** Pedido enriquecido para a interface: entrega atual, motoboy, espera e economia do frete. */
 export interface OrderView {
@@ -83,9 +84,12 @@ export function buildOrderViews(params: {
       total: Math.round((order.productsTotal + order.freightFee) * 100) / 100,
       waitingSince,
       waitingMinutes,
-      isDispatchLate: waitingMinutes !== null && waitingMinutes >= settings.dispatchAlertMinutes,
+      isDispatchLate: !isPickup(order) && waitingMinutes !== null && waitingMinutes >= settings.dispatchAlertMinutes,
       economics: deliveryEconomics(order, delivery, courier, settings),
-      deliveredAt: order.status === 'delivered' ? (delivery?.completedAt ?? null) : null,
+      deliveredAt:
+        order.status === 'delivered'
+          ? (delivery?.completedAt ?? [...history].reverse().find((h) => h.kind === 'status_change' && h.to === 'delivered')?.at ?? null)
+          : null,
     }
   })
 }

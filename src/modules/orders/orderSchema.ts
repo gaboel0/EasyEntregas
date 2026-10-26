@@ -48,14 +48,15 @@ export const orderItemSchema = z.object({
 
 export const orderInputSchema = z
   .object({
+    fulfillment: z.enum(['delivery', 'pickup']),
     customerName: requiredText('o nome do cliente', 2, 120),
     customerPhone: phoneSchema,
     address: z.object({
-      street: requiredText('a rua', 2, 160),
-      number: requiredText('o número', 1, 20),
-      district: requiredText('o bairro', 2, 80),
-      city: requiredText('a cidade', 2, 80),
-      state: z.string().trim().length(2, 'Use a sigla do estado (ex.: SP).'),
+      street: z.string().trim().max(160),
+      number: z.string().trim().max(20),
+      district: z.string().trim().max(80),
+      city: z.string().trim().max(80),
+      state: z.string().trim().max(2),
       complement: optionalText(120),
       reference: optionalText(160),
       location: geoPointSchema.nullable(),
@@ -73,6 +74,19 @@ export const orderInputSchema = z
     courierId: z.string().nullable().optional(),
   })
   .superRefine((value, ctx) => {
+    if (value.fulfillment === 'delivery') {
+      const need = (key: 'street' | 'number' | 'district' | 'city', min: number, message: string) => {
+        if (value.address[key].length < min) ctx.addIssue({ code: 'custom', path: ['address', key], message })
+      }
+      need('street', 2, 'Informe a rua.')
+      need('number', 1, 'Informe o número.')
+      need('district', 2, 'Informe o bairro.')
+      need('city', 2, 'Informe a cidade.')
+      if (value.address.state.length !== 2) ctx.addIssue({ code: 'custom', path: ['address', 'state'], message: 'Use a sigla do estado (ex.: SP).' })
+    } else {
+      if (value.freightFee !== 0) ctx.addIssue({ code: 'custom', path: ['freightFee'], message: 'Retirada não tem frete.' })
+      if (value.courierId) ctx.addIssue({ code: 'custom', path: ['courierId'], message: 'Retirada não usa motoboy.' })
+    }
     if (value.payment.method === 'cash' && value.payment.changeFor !== null) {
       const total = orderTotal(value.items, value.freightFee)
       if (value.payment.changeFor < total) {

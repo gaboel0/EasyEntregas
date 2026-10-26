@@ -15,7 +15,7 @@ import { INTEGRATIONS } from '@/services/integrations'
         <div class="min-w-0 flex-1">
           <div class="flex flex-wrap items-center gap-2">
             <p class="text-sm font-medium text-slate-900">{{ i.name }}</p>
-            <span class="rounded-full bg-slate-100 px-2 py-0.5 text-[11px] font-medium text-slate-600">Não conectado</span>
+            <span class="rounded-full bg-slate-100 px-2 py-0.5 text-xs font-medium text-slate-600">Não conectado</span>
           </div>
           <p class="text-sm text-slate-600">{{ i.description }}</p>
           <p class="mt-0.5 text-xs text-slate-500"><strong class="font-medium">Necessário:</strong> {{ i.requires }}</p>
