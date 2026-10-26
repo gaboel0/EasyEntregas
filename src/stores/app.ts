@@ -46,6 +46,12 @@ export const useAppStore = defineStore('app', () => {
     }
   }
 
+  /** Esquece os dados carregados (troca de conta ou logout); o próximo acesso recarrega tudo. */
+  function reset() {
+    status.value = 'idle'
+    error.value = null
+  }
+
   async function retry() {
     status.value = 'idle'
     await init()
@@ -67,5 +73,5 @@ export const useAppStore = defineStore('app', () => {
     status.value = 'ready'
   }
 
-  return { status, error, init, refresh, retry, switchSession, resetDemoData }
+  return { status, error, init, refresh, retry, reset, switchSession, resetDemoData }
 })

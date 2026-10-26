@@ -1,4 +1,4 @@
-# RotaCerta · Painel do estabelecimento
+# EasyEntregas · Painel do estabelecimento
 
 Painel web para pizzarias, hamburguerias, restaurantes e outros estabelecimentos de delivery
 cadastrarem pedidos, despacharem entregas para motoboys e avaliarem a viabilidade financeira do frete.

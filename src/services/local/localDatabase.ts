@@ -20,7 +20,13 @@ import type {
 
 export const DB_STORAGE_KEY = 'rotacerta:db'
 export const SESSION_STORAGE_KEY = 'rotacerta:session'
+export const AUTH_STORAGE_KEY = 'rotacerta:auth'
 export const DB_SCHEMA_VERSION = 1
+
+export interface LocalAuthMarker {
+  role: 'establishment' | 'courier'
+  name: string
+}
 
 export interface DatabaseShape {
   schemaVersion: number
@@ -107,6 +113,21 @@ export class LocalDatabase {
     }
   }
 
+  /** Marca de login da demonstração (somente papel e nome; nunca senha). */
+  readAuthMarker(): LocalAuthMarker | null {
+    try {
+      const raw = this.storage.getItem(AUTH_STORAGE_KEY)
+      return raw ? (JSON.parse(raw) as LocalAuthMarker) : null
+    } catch {
+      return null
+    }
+  }
+
+  writeAuthMarker(marker: LocalAuthMarker | null): void {
+    if (marker) this.storage.setItem(AUTH_STORAGE_KEY, JSON.stringify(marker))
+    else this.storage.removeItem(AUTH_STORAGE_KEY)
+  }
+
   writeSession(session: LocalSession): void {
     this.storage.setItem(SESSION_STORAGE_KEY, JSON.stringify(session))
   }
@@ -117,7 +138,7 @@ export class LocalDatabase {
       this.storage.setItem(DB_STORAGE_KEY, JSON.stringify(db))
     } catch (error) {
       // Cota excedida ou armazenamento bloqueado: mantém em memória durante a sessão.
-      console.warn('[RotaCerta] Não foi possível salvar os dados localmente.', error)
+      console.warn('[EasyEntregas] Não foi possível salvar os dados localmente.', error)
     }
   }
 }

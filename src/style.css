@@ -35,6 +35,7 @@
   --color-card: var(--card); /* cards: diferença sutil de fundo, sem borda */
 
   /* Barra lateral (escura nos dois temas) */
+  --color-accent-solid: var(--accent-solid); /* quadrado do item ativo: marca em tom claro, ícone escuro por cima */
   --color-sidebar: var(--sidebar);
   --color-sidebar-fg: var(--sidebar-fg);
   --color-sidebar-muted: var(--sidebar-muted);
@@ -69,11 +70,12 @@
   --surface: #ffffff;
   --card: #f8fafc;
 
-  --sidebar: #0f172a;
-  --sidebar-fg: #f1f5f9;
-  --sidebar-muted: #94a3b8;
-  --sidebar-hover: rgb(255 255 255 / 0.06);
-  --sidebar-active: rgb(255 255 255 / 0.12);
+  --accent-solid: oklch(0.78 0.14 var(--brand-h));
+  --sidebar: #ffffff;
+  --sidebar-fg: #0f172a;
+  --sidebar-muted: #64748b;
+  --sidebar-hover: #f1f5f9;
+  --sidebar-active: #eef2f6;
 
   --map-tile-filter: none;
   --chart-grid: #eef2f6;
@@ -103,7 +105,11 @@
   --surface: #0f1521;
   --card: #131b29;
 
-  --sidebar: #070a11;
+  --sidebar: #171b22;
+  --sidebar-fg: #f1f4f8;
+  --sidebar-muted: #8b97a8;
+  --sidebar-hover: rgb(255 255 255 / 0.07);
+  --sidebar-active: rgb(255 255 255 / 0.12);
 
   --map-tile-filter: invert(1) hue-rotate(180deg) brightness(0.92) contrast(0.88) saturate(0.7);
   --chart-grid: #1c2535;
@@ -292,5 +298,180 @@ html.theme-transition *::after {
   *::after {
     animation-duration: 1ms !important;
     transition-duration: 1ms !important;
+  }
+}
+
+/* ==========================================================================
+   BARRA LATERAL
+   Tokens únicos lidos pela barra e pelo conteúdo ao lado (nunca dessincronizam).
+   Desktop (>= 768px): aberta (264px) ou trilho de ícones (76px). Mobile: gaveta.
+   ========================================================================== */
+:root {
+  --sidebar-gap: 12px;
+  --sidebar-width: 264px;
+  --sidebar-rail: 76px;
+  --sidebar-duration: 300ms;
+  --sidebar-ease: cubic-bezier(0.4, 0, 0.2, 1);
+  --sidebar-motion: var(--sidebar-duration) var(--sidebar-ease);
+  --sidebar-inset-left: calc(var(--sidebar-gap) + env(safe-area-inset-left, 0px));
+}
+
+.app-sidebar {
+  position: fixed;
+  z-index: 50;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  border-radius: 1.5rem;
+  background: var(--sidebar);
+  color: var(--sidebar-muted);
+  box-shadow: 0 10px 40px -8px rgb(15 23 42 / 0.16);
+  top: calc(var(--sidebar-gap) + env(safe-area-inset-top, 0px));
+  bottom: calc(var(--sidebar-gap) + env(safe-area-inset-bottom, 0px));
+  left: var(--sidebar-inset-left);
+  width: var(--sidebar-width);
+  transition: width var(--sidebar-motion);
+}
+.app-sidebar[data-collapsed='true'] {
+  width: var(--sidebar-rail);
+}
+
+/* Conteúdo anda junto: folga + largura atual + folga, com a mesma duração e curva */
+.app-content {
+  transition: margin-left var(--sidebar-motion);
+}
+@media (min-width: 768px) {
+  .app-content {
+    margin-left: calc(var(--sidebar-inset-left) + var(--sidebar-width) + var(--sidebar-gap));
+  }
+  .app-shell[data-sidebar='rail'] .app-content {
+    margin-left: calc(var(--sidebar-inset-left) + var(--sidebar-rail) + var(--sidebar-gap));
+  }
+  .app-backdrop {
+    display: none;
+  }
+}
+
+/* Coreografia dos textos (desktop): ao fechar saem primeiro e rápido; ao abrir entram depois */
+.sb-label {
+  transition:
+    opacity 180ms var(--sidebar-ease) 160ms,
+    transform 180ms var(--sidebar-ease) 160ms;
+}
+.app-sidebar[data-collapsed='true'] .sb-label {
+  opacity: 0;
+  transform: translateX(-10px);
+  pointer-events: none;
+  transition:
+    opacity 100ms cubic-bezier(0.4, 0, 1, 1),
+    transform 160ms cubic-bezier(0.4, 0, 1, 1);
+}
+.sb-logo {
+  width: 150px;
+  transition: width var(--sidebar-motion);
+}
+.app-sidebar[data-collapsed='true'] .sb-logo {
+  width: 2.25rem;
+}
+.sb-rule {
+  position: absolute;
+  inset-inline: 0.625rem;
+  top: 50%;
+  height: 1px;
+  background: var(--color-slate-200);
+  opacity: 0;
+  transition: opacity 120ms ease;
+}
+.app-sidebar[data-collapsed='true'] .sb-rule {
+  opacity: 1;
+  transition: opacity 180ms ease 160ms;
+}
+
+/* Marcador do item ativo: um elemento só, desliza por transform */
+.sb-marker {
+  position: absolute;
+  top: 0;
+  left: 1.25rem;
+  width: 2.25rem;
+  height: 2.25rem;
+  border-radius: 0.75rem;
+  background: var(--accent-solid);
+  will-change: transform;
+}
+.sb-marker--ready {
+  transition:
+    transform var(--sidebar-motion),
+    opacity 150ms ease;
+}
+
+/* Mobile (< 768px): gaveta por cima do conteúdo, sem trilho */
+.app-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 40;
+  background: rgb(0 0 0 / 0.4);
+  backdrop-filter: blur(2px);
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 250ms ease;
+}
+.app-backdrop[data-open='true'] {
+  opacity: 1;
+  pointer-events: auto;
+}
+@media (max-width: 767.98px) {
+  .app-sidebar {
+    top: 8px;
+    bottom: 8px;
+    left: 8px;
+    width: min(var(--sidebar-width), 86vw);
+    transform: translateX(-110%);
+    opacity: 0;
+    visibility: hidden;
+    /* fechar: mais rápido e acelerando */
+    transition:
+      transform 250ms cubic-bezier(0.4, 0, 1, 1),
+      opacity 200ms cubic-bezier(0.4, 0, 1, 1),
+      visibility 0s linear 250ms;
+  }
+  .app-sidebar[data-open='true'] {
+    transform: none;
+    opacity: 1;
+    visibility: visible;
+    transition:
+      transform var(--sidebar-motion),
+      opacity var(--sidebar-motion),
+      visibility 0s;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .app-sidebar,
+  .app-content,
+  .app-backdrop,
+  .sb-label,
+  .sb-logo,
+  .sb-rule,
+  .sb-marker--ready {
+    transition-duration: 0.01ms !important;
+    transition-delay: 0s !important;
+  }
+}
+
+/* Skeleton: forma neutra com brilho suave; segue o tema pelos tokens da escala neutra */
+.skeleton {
+  background-color: var(--color-slate-200);
+  background-image: linear-gradient(90deg, transparent, color-mix(in oklab, var(--color-slate-50) 70%, transparent), transparent);
+  background-size: 200% 100%;
+  background-repeat: no-repeat;
+  animation: skeleton-shimmer 1.4s ease-in-out infinite;
+}
+@keyframes skeleton-shimmer {
+  from { background-position: 200% 0; }
+  to { background-position: -200% 0; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .skeleton {
+    animation: none;
   }
 }

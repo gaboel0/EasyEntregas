@@ -1,11 +1,12 @@
-import { ServiceError, type DataSource, type ServiceErrorCode } from '../contracts'
+import { ServiceError, type AuthSession, type DataSource, type ServiceErrorCode } from '../contracts'
 
 /**
  * Adaptador HTTP para uma API REST futura. Ele implementa os mesmos contratos da fonte local,
  * então trocar `VITE_DATA_SOURCE=local` por `http` não exige mudanças nas páginas ou stores.
  *
  * Endpoints esperados (todos escopados pelo estabelecimento do token):
- *   GET    /session                         → SessionContext
+ *   POST   /auth/login | /auth/register | /auth/password-reset | /auth/logout    GET /auth/session
+ *   GET    /session                       → SessionContext
  *   GET    /settings            PUT /settings
  *   PUT    /establishment
  *   GET    /users               POST /users   PUT /users/:id
@@ -57,6 +58,21 @@ export function createHttpDataSource(baseUrl: string): DataSource {
   const id = encodeURIComponent
 
   return {
+    // Senhas seguem somente por HTTPS ao backend, que emite a sessão em cookie httpOnly.
+    auth: {
+      getSession: async () => {
+        try {
+          return await get<AuthSession | null>('/auth/session')
+        } catch (e) {
+          if (e instanceof ServiceError && e.code === 'unauthenticated') return null
+          throw e
+        }
+      },
+      signIn: (req) => post('/auth/login', req),
+      signUp: (req) => post('/auth/register', req),
+      requestPasswordReset: async (email) => void (await post('/auth/password-reset', { email })),
+      signOut: async () => void (await post('/auth/logout')),
+    },
     orders: {
       list: () => get('/orders'),
       create: (input) => post('/orders', input),

@@ -23,6 +23,7 @@ import {
 } from '../contracts'
 import { DB_STORAGE_KEY, type DatabaseShape, type LocalDatabase } from './localDatabase'
 import { DEMO_DEFAULT_SESSION } from './demoSeed'
+import { createLocalAuth } from './localAuth'
 import { orderInputSchema, productsTotal, type OrderInput } from '@/modules/orders/orderSchema'
 import { courierInputSchema, type CourierInput } from '@/modules/couriers/courierSchema'
 import {
@@ -592,5 +593,5 @@ export function createLocalDataSource(db: LocalDatabase, options: LocalDataSourc
     },
   }
 
-  return { orders, couriers, establishment, demo }
+  return { auth: createLocalAuth(db), orders, couriers, establishment, demo }
 }

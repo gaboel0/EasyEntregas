@@ -1,10 +1,11 @@
 <script setup lang="ts">
-import { computed } from 'vue'
+import { computed, nextTick, onMounted, ref, watch } from 'vue'
 import { RouterLink, useRoute } from 'vue-router'
 import {
   Bike,
   Calculator,
   ChartColumn,
+  QrCode,
   ClipboardList,
   LayoutDashboard,
   Map,
@@ -14,10 +15,10 @@ import {
 } from 'lucide-vue-next'
 import { useOrdersStore } from '@/stores/orders'
 import { useSessionStore } from '@/stores/session'
+import { useSidebar } from '@/composables/useSidebar'
 import { ACTIVE_STATUSES, PRE_DISPATCH_STATUSES } from '@/modules/orders/orderWorkflow'
 
-defineProps<{ mobileOpen: boolean }>()
-const emit = defineEmits<{ close: [] }>()
+const { collapsed, drawerOpen, isDesktop, closeDrawer } = useSidebar()
 
 const route = useRoute()
 const orders = useOrdersStore()
@@ -42,6 +43,7 @@ const sections = computed(() => [
     items: [
       { name: 'couriers', label: 'Motoboys', icon: Bike },
       { name: 'calculator', label: 'Calculadora de frete', icon: Calculator },
+      { name: 'app-qrcode', label: 'QRCode para app', icon: QrCode },
       ...(session.can('reports.view') ? [{ name: 'reports', label: 'Relatórios', icon: ChartColumn }] : []),
       { name: 'settings', label: 'Configurações', icon: Settings },
     ],
@@ -51,44 +53,86 @@ const sections = computed(() => [
 function isActive(name: string) {
   return route.matched.some((r) => r.name === name || r.meta.section === name)
 }
+
+// Marcador do item ativo: um único elemento, posicionado por transform, que desliza entre itens.
+const nav = ref<HTMLElement | null>(null)
+const markerY = ref<number | null>(null)
+const markerReady = ref(false)
+
+function placeMarker() {
+  const active = sections.value.flatMap((s) => s.items).find((i) => isActive(i.name))
+  const icon = active ? nav.value?.querySelector<HTMLElement>(`[data-icon="${active.name}"]`) : null
+  markerY.value = icon ? icon.offsetTop : null
+}
+
+watch(
+  () => route.fullPath,
+  () => nextTick(placeMarker),
+)
+watch(sections, () => nextTick(placeMarker))
+onMounted(() => {
+  placeMarker()
+  // Só habilita a animação depois da primeira posição, para o marcador não "voar" na carga.
+  requestAnimationFrame(() => requestAnimationFrame(() => (markerReady.value = true)))
+})
 </script>
 
 <template>
-  <div v-if="mobileOpen" class="fixed inset-0 z-40 animate-fade-in bg-black/40 lg:hidden" aria-hidden="true" @click="emit('close')" />
+  <div class="app-backdrop" :data-open="drawerOpen" aria-hidden="true" @click="closeDrawer" />
   <aside
-    class="fixed inset-y-0 left-0 z-50 flex w-64 flex-col bg-sidebar text-sidebar-muted transition-transform lg:sticky lg:top-0 lg:h-screen lg:translate-x-0"
-    :class="mobileOpen ? 'translate-x-0' : '-translate-x-full'"
+    id="sidebar"
+    class="app-sidebar"
+    :data-open="drawerOpen"
+    :data-collapsed="collapsed"
     aria-label="Navegação principal"
+    :inert="!isDesktop && !drawerOpen ? true : undefined"
   >
-    <div class="flex h-14 items-center justify-between px-4">
-      <RouterLink to="/" class="flex items-center gap-2 text-white" @click="emit('close')">
-        <span class="grid size-8 place-items-center rounded-lg bg-primary text-white" aria-hidden="true">
+    <div class="flex h-16 shrink-0 items-center justify-between px-5">
+      <RouterLink to="/" class="sb-logo flex min-w-0 items-center gap-2.5 overflow-hidden" aria-label="EasyEntregas — início" @click="closeDrawer">
+        <span class="grid size-9 shrink-0 place-items-center rounded-xl bg-accent-solid text-[#0f172a]" aria-hidden="true">
           <Bike :size="18" />
         </span>
-        <span class="text-[15px] font-semibold tracking-tight text-sidebar-fg">RotaCerta</span>
+        <span class="sb-label text-[15px] font-semibold tracking-tight whitespace-nowrap text-sidebar-fg">EasyEntregas</span>
       </RouterLink>
-      <button type="button" class="rounded-md p-1 text-sidebar-muted hover:text-sidebar-fg lg:hidden" aria-label="Fechar menu" @click="emit('close')">
+      <button type="button" class="rounded-md p-1 text-sidebar-muted hover:text-sidebar-fg md:hidden" aria-label="Fechar menu" @click="closeDrawer">
         <X :size="18" />
       </button>
     </div>
 
-    <nav class="flex-1 overflow-y-auto px-3 py-2">
-      <div v-for="section in sections" :key="section.label" class="mb-5">
-        <p class="mb-1.5 px-2 text-[11px] font-medium tracking-wider text-sidebar-muted uppercase">{{ section.label }}</p>
-        <ul class="space-y-0.5">
+    <nav ref="nav" class="relative flex-1 overflow-x-hidden overflow-y-auto px-3 pt-1 pb-2">
+      <span
+        class="sb-marker"
+        :class="{ 'sb-marker--ready': markerReady }"
+        :style="{ transform: `translateY(${markerY ?? 0}px)`, opacity: markerY === null ? 0 : 1 }"
+        aria-hidden="true"
+      />
+      <div v-for="section in sections" :key="section.label" class="mb-4">
+        <div class="relative mb-1.5 h-5 px-2.5">
+          <p class="sb-label text-[11px] leading-5 font-medium tracking-wider whitespace-nowrap text-sidebar-muted/80 uppercase">{{ section.label }}</p>
+          <span class="sb-rule" aria-hidden="true" />
+        </div>
+        <ul class="space-y-1">
           <li v-for="item in section.items" :key="item.name">
             <RouterLink
               :to="{ name: item.name }"
-              class="flex items-center gap-2.5 rounded-lg px-2.5 py-2 text-sm font-medium transition-colors"
-              :class="isActive(item.name) ? 'bg-sidebar-active text-sidebar-fg' : 'text-sidebar-muted hover:bg-sidebar-hover hover:text-sidebar-fg'"
+              class="group flex items-center gap-3 overflow-hidden rounded-xl px-2 py-1 text-sm transition-colors"
+              :class="isActive(item.name) ? 'font-bold text-sidebar-fg' : 'font-medium text-sidebar-muted hover:text-sidebar-fg'"
               :aria-current="isActive(item.name) ? 'page' : undefined"
-              @click="emit('close')"
+              :title="collapsed ? item.label : undefined"
+              @click="closeDrawer"
             >
-              <component :is="item.icon" :size="17" aria-hidden="true" />
-              <span class="flex-1">{{ item.label }}</span>
+              <span
+                :data-icon="item.name"
+                class="relative z-10 grid size-9 shrink-0 place-items-center rounded-xl transition-colors"
+                :class="isActive(item.name) ? 'text-[#0f172a]' : 'group-hover:bg-sidebar-hover'"
+                aria-hidden="true"
+              >
+                <component :is="item.icon" :size="18" />
+              </span>
+              <span class="sb-label min-w-0 flex-1 truncate" :title="item.label">{{ item.label }}</span>
               <span
                 v-if="'badge' in item && item.badge"
-                class="tabular rounded-full px-1.5 py-px text-[11px] font-semibold"
+                class="sb-label tabular rounded-full px-1.5 py-px text-[11px] font-semibold"
                 :class="'alert' in item && item.alert ? 'bg-[#fbbf24] text-[#451a03]' : 'bg-sidebar-active text-sidebar-fg'"
                 :title="'alert' in item && item.alert ? 'Há pedidos aguardando despacho além do tempo limite' : undefined"
               >
@@ -100,9 +144,9 @@ function isActive(name: string) {
       </div>
     </nav>
 
-    <div class="border-t border-white/10 px-4 py-3 text-xs text-sidebar-muted">
+    <div class="sb-label mx-3 mb-3 shrink-0 border-t border-slate-200 px-2 pt-3 text-xs whitespace-nowrap text-sidebar-muted">
       <p class="truncate font-medium text-sidebar-fg">{{ session.establishment?.name }}</p>
-      <p class="mt-0.5">Painel do estabelecimento · v0.1</p>
+      <p class="mt-0.5 truncate">Painel do estabelecimento · v0.1</p>
     </div>
   </aside>
 </template>

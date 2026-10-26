@@ -1,4 +1,5 @@
 import type {
+  BusinessType,
   CourierProfile,
   CourierShiftStatus,
   Delivery,
@@ -119,7 +120,53 @@ export interface DemoControls {
   onExternalChange(listener: () => void): () => void
 }
 
+/**
+ * Autenticação. Senhas só trafegam do formulário até o backend (HTTPS); o painel nunca as guarda,
+ * registra ou devolve. O papel escolhido na tela é apenas uma dica de contexto: quem decide o papel
+ * e as permissões reais da conta é o servidor.
+ */
+export type AuthRole = 'establishment' | 'courier'
+
+export interface AuthSession {
+  role: AuthRole
+  name: string
+}
+
+export interface SignInRequest {
+  role: AuthRole
+  email: string
+  password: string
+}
+
+export interface EstablishmentSignUpRequest {
+  role: 'establishment'
+  ownerName: string
+  email: string
+  password: string
+  businessName: string
+  businessType: BusinessType
+  phone: string
+}
+
+export interface CourierSignUpRequest {
+  role: 'courier'
+  fullName: string
+  email: string
+  password: string
+  phone: string
+}
+
+export interface AuthService {
+  /** Sessão atual, ou null se não houver login. */
+  getSession(): Promise<AuthSession | null>
+  signIn(request: SignInRequest): Promise<AuthSession>
+  signUp(request: EstablishmentSignUpRequest | CourierSignUpRequest): Promise<AuthSession>
+  requestPasswordReset(email: string): Promise<void>
+  signOut(): Promise<void>
+}
+
 export interface DataSource {
+  auth: AuthService
   orders: OrdersService
   couriers: CouriersService
   establishment: EstablishmentService

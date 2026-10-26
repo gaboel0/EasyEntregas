@@ -31,9 +31,12 @@ export interface PostalAddress {
 // Estabelecimento, usuários e permissões
 // ---------------------------------------------------------------------------
 
+export type BusinessType = 'pizzeria' | 'burger' | 'sushi' | 'restaurant' | 'snack_bar' | 'other'
+
 export interface Establishment {
   id: ID
   name: string
+  businessType?: BusinessType
   legalName?: string
   document?: string
   phone: string

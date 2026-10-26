@@ -1,7 +1,9 @@
 <script setup lang="ts">
 import { ref } from 'vue'
 import { RouterLink } from 'vue-router'
-import { Check, ChevronDown, Moon, Settings, Sun } from 'lucide-vue-next'
+import { Check, ChevronDown, LogOut, Moon, Settings, Sun } from 'lucide-vue-next'
+import { useRouter } from 'vue-router'
+import { useAuthStore } from '@/stores/auth'
 import { useAppearance } from '@/composables/useAppearance'
 import AppPopover from '@/components/ui/AppPopover.vue'
 import { useSessionStore } from '@/stores/session'
@@ -15,6 +17,13 @@ const session = useSessionStore()
 const app = useAppStore()
 const toast = useToast()
 const switching = ref(false)
+const authStore = useAuthStore()
+const router = useRouter()
+
+async function signOut() {
+  await authStore.signOut()
+  await router.replace({ name: 'login' })
+}
 const { isDark, toggleTheme } = useAppearance()
 
 async function switchTo(establishmentId: string, userId: string, close: () => void) {
@@ -89,6 +98,9 @@ async function switchTo(establishmentId: string, userId: string, close: () => vo
           </button>
         </div>
       </div>
+      <button type="button" class="flex w-full items-center gap-2 border-t border-slate-100 px-4 py-2.5 text-left text-sm text-slate-700 hover:bg-slate-100/70" @click="signOut">
+        <LogOut :size="15" aria-hidden="true" /> Sair
+      </button>
     </template>
   </AppPopover>
 </template>
