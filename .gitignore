@@ -1,0 +1,13 @@
+node_modules
+dist
+*.local
+.env
+.env.*
+!.env.example
+coverage
+*.tsbuildinfo
+.vscode/*
+!.vscode/extensions.json
+
+# Contexto local do produto (não versionar)
+PROJECT_CONTEXT.md

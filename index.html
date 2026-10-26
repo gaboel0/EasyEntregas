@@ -1,0 +1,32 @@
+<!doctype html>
+<html lang="pt-BR">
+  <head>
+    <meta charset="UTF-8" />
+    <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="theme-color" content="#0f172a" />
+    <!-- Aplica tema e cor da marca antes da primeira pintura (evita flash do tema errado). Mantenha em sincronia com src/composables/useAppearance.ts -->
+    <script>
+      (function () {
+        try {
+          var root = document.documentElement
+          var t = localStorage.getItem('rotacerta:theme')
+          var dark = t ? t === 'dark' : window.matchMedia('(prefers-color-scheme: dark)').matches
+          if (dark) root.classList.add('dark')
+          root.style.colorScheme = dark ? 'dark' : 'light'
+          var h = localStorage.getItem('rotacerta:brand-h')
+          if (h !== null && isFinite(Number(h))) root.style.setProperty('--brand-h', h)
+        } catch (e) {}
+      })()
+    </script>
+    <style>html{background:#fff}html.dark{background:#0a0e16}</style>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet" />
+    <title>RotaCerta · Painel do estabelecimento</title>
+  </head>
+  <body>
+    <div id="app"></div>
+    <script type="module" src="/src/main.ts"></script>
+  </body>
+</html>
