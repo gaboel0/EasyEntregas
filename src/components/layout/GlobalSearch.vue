@@ -94,7 +94,7 @@ onBeforeUnmount(() => window.removeEventListener('keydown', onGlobalKey))
       ref="input"
       v-model="query"
       type="search"
-      class="field-input h-9 pr-10 pl-9"
+      class="field-input h-10 border-transparent! bg-slate-100/70! pr-10 pl-9 shadow-none! focus:ring-brand-500/50!"
       placeholder="Buscar pedido, cliente, telefone ou motoboy"
       aria-label="Busca global"
       role="combobox"
@@ -106,7 +106,7 @@ onBeforeUnmount(() => window.removeEventListener('keydown', onGlobalKey))
       @input="active = 0"
       @keydown="onKeydown"
     />
-    <kbd class="pointer-events-none absolute top-1/2 right-2.5 hidden -translate-y-1/2 rounded border border-slate-200 px-1.5 text-xs text-slate-400 sm:block">/</kbd>
+    <kbd class="pointer-events-none absolute top-1/2 right-2.5 hidden -translate-y-1/2 rounded bg-slate-200/60 px-1.5 text-xs text-slate-400 sm:block">/</kbd>
     <ul
       v-if="focused && query.trim().length >= 2"
       id="global-search-results"

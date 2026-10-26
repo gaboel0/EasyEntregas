@@ -22,8 +22,8 @@ const routeMinutes = computed(() => (props.view.delivery?.dispatchedAt ? minutes
 
 <template>
   <article
-    class="rounded-xl p-3 transition-colors"
-    :class="view.isDispatchLate ? 'bg-amber-50' : 'bg-surface'"
+    class="rounded-(--radius-control) border-b border-slate-200/60 px-3 py-3 transition-colors last:border-b-0 hover:bg-slate-100/50"
+    :class="view.isDispatchLate ? 'bg-amber-50/60' : ''"
     :aria-label="`Pedido ${formatOrderNumber(view.order.number)}`"
   >
     <div class="flex items-start justify-between gap-2">

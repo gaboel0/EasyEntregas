@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { computed, onBeforeUnmount, onMounted, ref } from 'vue'
 import { RouterLink } from 'vue-router'
-import { Camera, Globe, Inbox, MapPinOff, MessageCircle, Phone, Plus, Radio, Sparkles, Store, TriangleAlert } from 'lucide-vue-next'
+import { Camera, Check, Globe, Inbox, MapPinOff, MessageCircle, Phone, Radio, Sparkles, Store, TriangleAlert, X } from 'lucide-vue-next'
 import type { Component } from 'vue'
 import type { OrderSource } from '@/types/domain'
 import type { OrderView } from '@/modules/orders/orderViews'
@@ -14,6 +14,7 @@ import { useSessionStore } from '@/stores/session'
 import { useAppStore } from '@/stores/app'
 import { useNow } from '@/composables/useNow'
 import { useDemoIncoming } from '@/composables/useDemoIncoming'
+import { useOrderActions } from '@/composables/useOrderActions'
 import { ORDER_SOURCE_LABEL } from '@/modules/orders/orderLabels'
 import { ACTIVE_STATUSES } from '@/modules/orders/orderWorkflow'
 import { INTEGRATIONS } from '@/services/integrations'
@@ -30,6 +31,7 @@ const session = useSessionStore()
 const app = useAppStore()
 const now = useNow()
 const demo = useDemoIncoming()
+const actions = useOrderActions()
 
 const SOURCE_ICON: Record<OrderSource, Component> = { whatsapp: MessageCircle, instagram: Camera, phone: Phone, counter: Store, other: Globe }
 
@@ -108,15 +110,14 @@ function deliveryLabel(v: OrderView): { text: string; tone: string } {
         <AppButton v-if="session.isDemo && session.can('orders.create')" size="sm" variant="ghost" :icon="Sparkles" :loading="demo.busy.value" title="Gera um pedido fictício para demonstrar a chegada em tempo real" @click="demo.simulate()">
           Simular (demo)
         </AppButton>
-        <AppButton v-if="session.can('orders.create')" size="sm" :icon="Plus" :to="{ name: 'order-new' }">Cadastrar manualmente</AppButton>
       </div>
     </div>
 
     <ul v-if="list.length" class="px-2 pb-2">
-      <li v-for="v in list" :key="v.order.id" class="relative">
+      <li v-for="v in list" :key="v.order.id" class="relative flex flex-wrap items-center md:flex-nowrap">
         <button
           type="button"
-          class="relative grid w-full gap-x-4 gap-y-2 rounded-xl px-3 py-3.5 text-left transition-colors hover:bg-slate-100/60 md:grid-cols-[minmax(0,1.6fr)_minmax(0,1.3fr)_auto] md:items-center"
+          class="relative grid min-w-0 flex-1 gap-x-4 gap-y-2 rounded-xl px-3 py-3.5 text-left transition-colors hover:bg-slate-100/60 md:grid-cols-[minmax(0,1.6fr)_minmax(0,1.3fr)_auto] md:items-center"
           :class="[isNew(v) ? 'bg-brand-50/50' : '', !ACTIVE_STATUSES.includes(v.order.status) ? 'opacity-70' : '']"
           :aria-label="`Abrir pedido ${formatOrderNumber(v.order.number)} de ${v.order.customerName}`"
           @click="selectedId = v.order.id"
@@ -144,6 +145,12 @@ function deliveryLabel(v: OrderView): { text: string; tone: string } {
 
           <span class="tabular block text-sm font-semibold text-slate-900 md:text-right">{{ formatCurrency(v.total) }}</span>
         </button>
+
+        <!-- Pedido recém-chegado: decidir sem abrir o modal -->
+        <div v-if="v.order.status === 'received' && (session.can('orders.change_status') || session.can('orders.cancel'))" class="flex shrink-0 gap-2 px-3 pb-3 md:pb-0 md:pl-0">
+          <AppButton v-if="session.can('orders.change_status')" size="sm" variant="primary" class="w-28" :icon="Check" :loading="actions.isPending(v.order.id)" :aria-label="`Confirmar pedido ${formatOrderNumber(v.order.number)}`" @click="actions.changeStatus(v, 'preparing')">Confirmar</AppButton>
+          <AppButton v-if="session.can('orders.cancel')" size="sm" variant="danger" class="w-28" :icon="X" :disabled="actions.isPending(v.order.id)" :aria-label="`Recusar pedido ${formatOrderNumber(v.order.number)}`" @click="actions.changeStatus(v, 'cancelled', { refuse: true })">Recusar</AppButton>
+        </div>
       </li>
     </ul>
 

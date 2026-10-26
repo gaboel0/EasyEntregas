@@ -140,13 +140,13 @@ async function toggleShift(courierId: string, available: boolean) {
           <h2 id="q-title" class="card-title">Aguardando atribuição</h2>
           <span class="tabular text-xs text-slate-500">{{ queue.length }}</span>
         </div>
-        <div class="space-y-2 p-3">
+        <div class="p-1.5">
           <DispatchOrderCard v-for="v in queue" :key="v.order.id" :view="v" mode="queue" @assign="assignTarget = $event" />
           <EmptyState v-if="!queue.length" compact :icon="CircleCheck" title="Nenhum pedido sem motoboy" description="Todos os pedidos em andamento já têm entregador definido." />
         </div>
         <template v-if="failed.length">
           <div class="card-header border-t"><h3 class="card-title text-rose-700">Falhas aguardando decisão</h3></div>
-          <div class="space-y-2 p-3">
+          <div class="p-1.5">
             <DispatchOrderCard v-for="v in failed" :key="v.order.id" :view="v" mode="assigned" @assign="assignTarget = $event" />
           </div>
         </template>
@@ -158,7 +158,7 @@ async function toggleShift(courierId: string, available: boolean) {
             <h2 id="a-title" class="card-title">Atribuídos · aguardando saída</h2>
             <span class="tabular text-xs text-slate-500">{{ assigned.length }}</span>
           </div>
-          <div class="space-y-2 p-3">
+          <div class="p-1.5">
             <DispatchOrderCard v-for="v in assigned" :key="v.order.id" :view="v" mode="assigned" @assign="assignTarget = $event" />
             <EmptyState v-if="!assigned.length" compact :icon="UserCheck" title="Nenhum pedido aguardando saída" />
           </div>
@@ -168,7 +168,7 @@ async function toggleShift(courierId: string, available: boolean) {
             <h2 id="t-title" class="card-title">Em rota</h2>
             <span class="tabular text-xs text-slate-500">{{ inTransit.length }}</span>
           </div>
-          <div class="space-y-2 p-3">
+          <div class="p-1.5">
             <DispatchOrderCard v-for="v in inTransit" :key="v.order.id" :view="v" mode="transit" />
             <EmptyState v-if="!inTransit.length" compact :icon="Navigation" title="Nenhuma entrega em rota" />
           </div>

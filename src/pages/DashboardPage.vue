@@ -44,8 +44,8 @@ const todayLabel = computed(() => now.value.toLocaleDateString('pt-BR', { weekda
 <template>
   <div>
     <PageHeader :title="`${greeting}, ${session.user?.name.split(' ')[0]}`" :description="todayLabel" />
-    <dl class="mb-6 grid grid-cols-2 gap-x-6 gap-y-3 sm:grid-cols-5" aria-label="Resumo da operação agora">
-      <RouterLink v-for="p in pulse" :key="p.label" :to="p.to" class="-mx-2 rounded-(--radius-control) px-2 py-1.5 transition-colors duration-(--duration-fast) hover:bg-slate-100/70">
+    <dl class="mb-6 grid grid-cols-2 gap-3 sm:grid-cols-5" aria-label="Resumo da operação agora">
+      <RouterLink v-for="p in pulse" :key="p.label" :to="p.to" class="card px-4 py-3.5 transition-colors duration-(--duration-fast) hover:bg-slate-100/70">
         <dd class="tabular text-3xl font-bold tracking-tight" :class="p.alert ? 'text-amber-700' : 'text-slate-900'">{{ p.count }}</dd>
         <dt class="text-sm text-slate-500">{{ p.label }}</dt>
       </RouterLink>

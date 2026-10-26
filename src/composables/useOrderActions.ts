@@ -64,19 +64,19 @@ export function useOrderActions() {
     return actionsFor(view).find((a) => a.kind === 'primary') ?? null
   }
 
-  async function changeStatus(view: OrderView, to: OrderStatus): Promise<boolean> {
+  async function changeStatus(view: OrderView, to: OrderStatus, options: { refuse?: boolean } = {}): Promise<boolean> {
     const code = formatOrderNumber(view.order.number)
     let note: string | undefined
     if (to === 'cancelled' || to === 'delivery_failed') {
       const answer = await confirm({
-        title: to === 'cancelled' ? `Cancelar o pedido ${code}?` : `Registrar falha na entrega ${code}?`,
+        title: to === 'cancelled' ? (options.refuse ? `Recusar o pedido ${code}?` : `Cancelar o pedido ${code}?`) : `Registrar falha na entrega ${code}?`,
         description:
           to === 'cancelled'
             ? 'O pedido sai da operação e não poderá ser reaberto.'
             : 'A tentativa será encerrada. Depois você poderá enviar novamente ou cancelar o pedido.',
         tone: 'danger',
-        confirmLabel: to === 'cancelled' ? 'Cancelar pedido' : 'Registrar falha',
-        reason: { label: 'Motivo', placeholder: to === 'cancelled' ? 'Ex.: cliente desistiu' : 'Ex.: cliente não atendeu', required: true },
+        confirmLabel: to === 'cancelled' ? (options.refuse ? 'Recusar pedido' : 'Cancelar pedido') : 'Registrar falha',
+        reason: { label: 'Motivo', placeholder: to === 'cancelled' ? (options.refuse ? 'Ex.: fora do horário, item em falta' : 'Ex.: cliente desistiu') : 'Ex.: cliente não atendeu', required: true },
       })
       if (!answer.confirmed) return false
       note = answer.reason

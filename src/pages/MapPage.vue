@@ -171,7 +171,7 @@ const listByCategory = computed(() =>
 
         <div class="flex-1 overflow-y-auto">
           <div v-for="group in listByCategory" :key="group.category">
-            <p class="sticky top-0 z-[1] flex items-center gap-2 border-b border-slate-100 bg-surface px-4 py-2 text-xs font-semibold text-slate-600">
+            <p class="sticky top-0 z-[1] flex items-center gap-2 border-b border-slate-200/60 bg-card px-4 py-2 text-xs font-semibold text-slate-600">
               <span class="size-2.5 rounded-full" :style="{ background: CATEGORY[group.category].color }" aria-hidden="true" />
               {{ CATEGORY[group.category].label }} <span class="font-normal text-slate-400">{{ group.items.length }}</span>
             </p>
